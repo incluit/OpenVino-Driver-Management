@@ -15,6 +15,18 @@ toc::[]
 
 TBD.
 
+== Use cases
+
+=== Driver Behaviour
+Discover more about this use case https://github.com/incluit/OpenVino-Driver-Management/tree/master/DriverBehavior[here].
+
+=== Action Recognition
+Discover more about this use case https://github.com/incluit/OpenVino-Driver-Management/tree/master/ActionRecognition[here].
+
+=== User Interface
+Discover more about this use case https://github.com/incluit/OpenVino-Driver-Management/tree/master/UI[here].
+
+
 == Prerequisites
 
 === Hardware
