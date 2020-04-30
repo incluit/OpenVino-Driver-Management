@@ -30,6 +30,7 @@ RUN apt-get install -y --no-install-recommends \
         locales \
         libjpeg8-dev \
         libopenblas-dev \
+        gnupg2 \
         sudo 
 
 RUN pip3 install --upgrade pip setuptools wheel Flask==1.0.2 AWSIoTPythonSDK
@@ -45,14 +46,13 @@ RUN chmod +x /app/DriverBehavior/scripts/setupenv.sh
 RUN locale-gen en_US en_US.UTF-8
 RUN update-locale LC_ALL=en_US.UTF-8 LANG=en_US.UTF-8
 RUN export LANG=en_US.UTF-8
-RUN apt install curl gnupg2 lsb-release
 RUN curl -s https://raw.githubusercontent.com/ros/rosdistro/master/ros.asc | sudo apt-key add -
 RUN sh -c 'echo "deb http://packages.ros.org/ros2/ubuntu `lsb_release -cs` main" > /etc/apt/sources.list.d/ros2-latest.list'
 ARG DEBIAN_FRONTEND=noninteractive
-RUN sudo apt install 
+
 RUN apt update && apt install -y ros-crystal-ros-base
 
-RUN apt update && apt install -y \
+RUN apt update && apt install -y --no-install-recommends\
         python3-colcon-common-extensions \
         ros-crystal-rosbag2-test-common \
         ros-crystal-rosbag2-storage-default-plugins \
