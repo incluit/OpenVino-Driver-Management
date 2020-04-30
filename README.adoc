@@ -1,0 +1,100 @@
+# OpenVino-Driver-Management
+:idprefix:
+:idseparator: -
+:sectanchors:
+:sectlinks:
+:sectnumlevels: 6
+:sectnums:
+:toc: macro
+:toclevels: 6
+:toc-title: Table of Contents
+
+toc::[]
+
+== Introduction
+
+TBD.
+
+== Use cases
+
+=== Driver Behaviour
+Discover more about this use case https://github.com/incluit/OpenVino-Driver-Management/tree/master/DriverBehavior[here].
+
+=== Action Recognition
+Discover more about this use case https://github.com/incluit/OpenVino-Driver-Management/tree/master/ActionRecognition[here].
+
+=== User Interface
+Discover more about this use case https://github.com/incluit/OpenVino-Driver-Management/tree/master/UI[here].
+
+
+== Prerequisites
+
+=== Hardware
+
+* Optional:
+
+**  USB camera - Standard USB Video Class (UVC) camera.
+
+** Intel® Core™ CPU with integrated graphics.
+
+** Intel® Movidius™ Neural Compute Stick
+
+=== Software
+
+* Docker. To install on Ubuntu, run:
+
+[source,bash]
+----
+sudo snap install docker
+
+sudo groupadd docker
+
+sudo usermod -aG docker $USER
+----
+
+
+== Installation
+
+**1.** Clone the repository at desired location:
+
+[source,bash]
+----
+git clone https://github.com/incluit/OpenVino-Driver-Management.git
+----
+
+**2.** Change to the top git repository:
+
+[source,bash]
+----
+cd OpenVino-Driver-Management
+----
+
+**3.** Build the docker:
+[source,bash]
+----
+docker build -t openvino-incluit . --rm
+----
+
+**4.** Configure the display output with the following command:
+
+[source,bash]
+----
+xhost +
+----
+
+**5.** Run the  docker:
+
+[source,bash]
+----
+docker run --net=host --env="DISPLAY" -it --device /dev/dri:/dev/dri --device-cgroup-rule='c 189:* rmw' -v /dev/bus/usb:/dev/bus/usb --device=/dev/video0 --volume="$HOME/.Xauthority:/root/.Xauthority:rw" openvino-incluit /bin/bash
+----
+
+**6.** AWS:
+
+Add the certificates of AWS in the UI
+
+
+== To Do
+
+* [ ] Intrduction in README file.
+* [ ] Create a Docker image of the project, upload to Docker Hub and add this option in the Readme file.

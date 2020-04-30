@@ -1,1 +1,0 @@
-# OpenVino-Driver-Management
