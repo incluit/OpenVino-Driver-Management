@@ -26,6 +26,9 @@ Discover more about this use case https://github.com/incluit/OpenVino-Driver-Man
 === User Interface
 Discover more about this use case https://github.com/incluit/OpenVino-Driver-Management/tree/master/UI[here].
 
+== AWS Arquitecture
+
+TBD
 
 == Prerequisites
 
