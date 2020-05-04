@@ -1,8 +1,3 @@
-# AWS Certificates
+# AWS Arquitecture
 
-In this path you must put the Certificate, 2 Keys and RootCA of AWS:
-
-* Certificate: *-certificate.pem.crt
-* Private Key: *-private.pem.key
-* Public Key: *-public.pem.key
-* RootCA: AmazonRootCA1.pem
+![AWS Arquitecture](https://github.com/incluit/OpenVino-Driver-Management/blob/master/AWS/DriverManagement.png)
