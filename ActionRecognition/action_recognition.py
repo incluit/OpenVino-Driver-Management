@@ -35,32 +35,12 @@ from include.config import *
 from include.basicpubsub import BasicPubSub
 from os import path
 
-"""
-# Send data to S3
-ACCESS_KEY = 'XXXXXXXXXXXXXXXX'
-SECRET_KEY = 'XXXXXXXX/XXXXXXXXXXXXXXXXXXXXXXXX'
-AllowedActions = ['both', 'publish', 'subscribe']
-
-def upload_to_aws(local_file, bucket, s3_file):
-    s3 = boto3.client('s3', aws_access_key_id=ACCESS_KEY,
-                      aws_secret_access_key=SECRET_KEY)
-    try:
-        s3.upload_file(local_file, bucket, s3_file)
-        print("Upload Successful")
-        return True
-    except FileNotFoundError:
-        print("The file was not found")
-        return False
-    except NoCredentialsError:
-        print("Credentials not available")
-        return False
-"""
 state = {"signal": False, "ready": True }
 AllowedActions = ['both', 'publish', 'subscribe']
 
-def video_demo(encoder, decoder, videos, fps=30, labels=None, publicAWS=None):
+def video_demo(encoder, decoder, videos, fps=30, labels=None, no_show=False, publicAWS=None):
     """Continuously run demo on provided video list"""
-    result_presenter = ResultRenderer(labels=labels, publicAWS = publicAWS)
+    result_presenter = ResultRenderer(labels=labels, no_show = no_show, publicAWS = publicAWS)
     run_pipeline(videos, encoder, decoder, result_presenter.render_frame, fps=fps)
 
 def build_argparser():
@@ -97,6 +77,7 @@ def build_argparser():
     args.add_argument("-M", "--message", action="store", dest="message", default="Hello World!",
                         help="Message to publish")
     args.add_argument("--only", help="Optional. Run Driver Action without Driver Assistance waiting signal", dest="only", action='store_true')                        
+    args.add_argument("--no_show", help="Optional. No show processed video.", dest="no_show", action='store_true')      
     return parser
 
 def receiveSignal(signalNumber, frame):
@@ -183,9 +164,9 @@ def main():
             state["ready"] = False
             #upload_to_aws('README.md', 'driver-actions', 'README100.md')
             if args.rootCAPath:
-                video_demo(encoder, decoder, videos, args.fps, labels, publicAWS)
+                video_demo(encoder, decoder, videos, args.fps, labels, args.no_show, publicAWS)
             else:
-                video_demo(encoder, decoder, videos, args.fps, labels)
+                video_demo(encoder, decoder, videos, args.fps, labels, args.no_show)
             state["ready"] = True
 
 if __name__ == '__main__':

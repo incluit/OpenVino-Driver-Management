@@ -23,8 +23,14 @@ workspace = os.path.join(config['workspace']['path'], '')
 # Variables Initialization
 dirname = os.path.dirname(__file__)
 file_input = os.path.join(dirname, 'tmp', '')
+if not os.path.exists(file_input):
+    os.makedirs(file_input)
 
 aws_folder = workspace + "AWS/"
+if not os.path.exists(aws_folder):
+    os.makedirs(aws_folder)
+aws_endpoint = 'a1572pdc8tbdas-ats.iot.us-east-1.amazonaws.com'
+
 driverbehavior_folder = workspace + "DriverBehavior/"
 actionrecognition_folder = workspace + "ActionRecognition/"
 
@@ -134,10 +140,14 @@ def run_driver_management():
                 else:
                     command_driver_actions += " -i /dev/video0"
 
+        # Show the output in display
+        if (json['show_output'] == "0"):
+            command_driver_actions += " --no_show"
+        
         if (json['aws_actions']):
-            command_driver_actions += " -e a1572pdc8tbdas-ats.iot.us-east-1.amazonaws.com -r " + aws_folder + "AmazonRootCA1.pem -c " + \
-                aws_folder + "a81867df13-certificate.pem.crt -k " + \
-                aws_folder + "a81867df13-private.pem.key -t actions/"
+            command_driver_actions += " -e " + aws_endpoint + " -r " + aws_folder + "root_ca.pem -c " + \
+                aws_folder + "certificate.pem.crt -k " + \
+                aws_folder + "private.pem.key -t actions/"
 
         # Driver Behaviour Command
         command_driver_behaviour = "source " + ROS_SOURCE + " && source " + driverbehavior_folder + "ets_ros2/install/setup.bash && source " + OPENVINO_SOURCE + " && source " + driverbehavior_folder + "scripts/setupenv.sh && cd " + driverbehavior_folder + "build/intel64/Release && ./driver_behavior -d " + \
@@ -177,9 +187,12 @@ def run_driver_management():
         # Headpose Detection
         if (json['head_pose'] == "1"):
             command_driver_behaviour += " -m_hp $hp32"
-        # Save the ouput in a video file
+        # Save the output in a video file
         if (json['save'] == "1"):
             command_driver_behaviour += " -o "
+        # Show the output in display
+        if (json['show_output'] == "0"):
+            command_driver_behaviour += " -no_show "
         # Synchronous / Asynchronous mode
         if (json['async'] == "1"):
             command_driver_behaviour += " -async"
@@ -328,22 +341,22 @@ def upload_certificates():
             certificate = request.files.get('certificate', False)
             if certificate:
                 file = request.files["certificate"]
-                file.save(os.path.join(aws_folder, file.filename))
+                file.save(os.path.join(aws_folder, 'certificate.pem.crt'))
             # Private Key
             private_key = request.files.get('private_key', False)
             if private_key:
                 file = request.files["private_key"]
-                file.save(os.path.join(aws_folder, file.filename))
+                file.save(os.path.join(aws_folder, 'private.pem.key'))
             # Public Key
             public_key = request.files.get('public_key', False)
             if public_key:
                 file = request.files["public_key"]
-                file.save(os.path.join(aws_folder, file.filename))
+                file.save(os.path.join(aws_folder, 'public.pem.key'))
             # RootCA
             root_ca = request.files.get('root_ca', False)
             if root_ca:
                 file = request.files["root_ca"]
-                file.save(os.path.join(aws_folder, file.filename))
+                file.save(os.path.join(aws_folder, 'root_ca.pem'))
             out = True
     return jsonify(out=out)
 

@@ -32,7 +32,7 @@ TEXT_LEFT_MARGIN = 15
 
 class ResultRenderer(object):
     def __init__(self, display_fps=False, display_confidence=True, number_of_predictions=1, labels=None,
-                 output_height=720, publicAWS=None):
+                 output_height=720, no_show=False, publicAWS=None):
         self.number_of_predictions = number_of_predictions
         self.display_confidence = display_confidence
         self.display_fps = display_fps
@@ -40,6 +40,7 @@ class ResultRenderer(object):
         self.output_height = output_height
         self.meters = defaultdict(partial(WindowAverageMeter, 16))
         self.postprocessing = [LabelPostprocessing(n_frames=30, history_size=100) for _ in range(number_of_predictions)]
+        self.no_show = no_show
         self.publicAWS = publicAWS
         self.last_label=''
         print("To close the application, press 'CTRL+C' here or switch to the output window and press any key")
@@ -89,7 +90,8 @@ class ResultRenderer(object):
             cv2.putText(frame, "Inference time: {:.2f}ms ({:.2f} FPS)".format(inference_time, fps),
                         text_loc, FONT_STYLE, FONT_SIZE, FONT_COLOR)
 
-        cv2.imshow("Action Recognition", frame)
+        if not(self.no_show):
+            cv2.imshow("Action Recognition", frame)
 
         if cv2.waitKey(1) & 0xFF == ord('q'):
             return -1

@@ -116,7 +116,7 @@ bool ParseAndCheckCommandLine(int argc, char *argv[])
 	}
 
 	// no need to wait for a key press from a user if an output image/video file is not shown.
-	FLAGS_no_wait |= FLAGS_no_show;
+	FLAGS_no_wait |= false; //FLAGS_no_wait |= FLAGS_no_show;
 
 	return true;
 }
@@ -691,7 +691,7 @@ fSim = true;
 		// --------------------------- 3. Do inference ---------------------------------------------------------
 		// Start inference & calc performance.
 		slog::info << "Start inference " << slog::endl;
-		if (!FLAGS_no_show)
+		if (true) // if (!FLAGS_no_show)
 		{
 			std::cout << "Press any key to stop" << std::endl;
 		}
@@ -953,7 +953,7 @@ fSim = true;
 				timer.finish("face analytics wait");
 
 				// Visualize results.
-				if (!FLAGS_no_show)
+				if (true) // if (!FLAGS_no_show)
 				{
 					TrackedObjects tracked_face_objects;
 					timer.start("visualization");
@@ -1242,7 +1242,9 @@ fSim = true;
                 }
 
                 // Sample of Results
-                cv::imshow("Detection results", prev_frame);
+				if (!FLAGS_no_show) {
+                	cv::imshow("Detection results", prev_frame);
+				}
 				// Save the ouput
                 if (FLAGS_o) {
                     video_output.write(prev_frame);
@@ -1327,7 +1329,7 @@ fSim = true;
                 }
                 break;
             }
-            else if (!FLAGS_no_show && -1 != cv::waitKey(1))
+            else if (true && -1 != cv::waitKey(1)) // else if (!FLAGS_no_show && -1 != cv::waitKey(1))
             {
                 timer.finish("total");
                 break;

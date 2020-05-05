@@ -290,6 +290,16 @@
                                 <label class="custom-control-label" for="rosbag"> Simulated Data
                                     (Rosbag)</label>
                             </div>
+                            <div class="custom-control custom-switch">
+                                <input type="checkbox" class="custom-control-input"
+                                    id="show_output"
+                                    onchange="$(this).next().val(this.checked?1:0);"
+                                    checked />
+                                <input type="hidden" id="show_output_checkbox"
+                                    name="show_output" value="1" />
+                                <label class="custom-control-label"
+                                    for="show_output"> Show Output</label>
+                            </div>
                             <br>
                             <b>Please, once you run it, wait a moment without doing anything.</b><br>
                             Press "Stop" button to finish.
