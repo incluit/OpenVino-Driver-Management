@@ -9,9 +9,12 @@ Here we declare all the IoT devices that sends the information to AWS through MQ
 In IoT Core are delaclared the rules that sends information to the others AWS services (ElasticSearch, SNS and DynamoDB)
 
 ### IoT Core Rules:
-    - Send data to ElasticSearch and Kibana: All data in topics /drivers and /actions is sent to Amazon ElasticSearch with an index and ID.
-    - Send a message as an SNS push notification: When a variable registered exceeds a certain value a notification alert is sent.
-    - Insert a message into a DynamoDB table: All messages received in IoT Core is stored in DynamoDB in a no relational table.
+
+- Send data to ElasticSearch and Kibana: All data in topics /drivers and /actions is sent to Amazon ElasticSearch with an index and ID.
+    
+- Send a message as an SNS push notification: When a variable registered exceeds a certain value a notification alert is sent.
+   
+- Insert a message into a DynamoDB table: All messages received in IoT Core is stored in DynamoDB in a no relational table.
 
 ## ElasticSearch
 
