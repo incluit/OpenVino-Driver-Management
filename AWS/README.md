@@ -18,7 +18,8 @@ In IoT Core are delaclared the rules that sends information to the others AWS se
 
 ## ElasticSearch
 
-The data received from IoT Core is processed and displayed in a Kibana Dashboard.
+The data received from IoT Core is processed by an ElastiSearch cluster and displayed in a Kibana Dashboard.
+This dashboard is customizable and adapted to our purpose, with the information of the truck and driver behaviour.
 
 ## Cognito
 
