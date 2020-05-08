@@ -147,19 +147,19 @@ static const char video_output_message[] = "Enable video output";
 static const char endpoint_message[] = "Endpoint of the mqtt server not including a port";
 
 // AWS client certificate
-static const char cert_message[] = "Path to your client certificate in PEM format";
+static const char cert_message[] = "Path to your client certificate in .pem.crt format";
 
 // AWS private key
-static const char key_message[] = "Path to your key in PEM format";
+static const char key_message[] = "Path to your key in .pem.key format";
+
+// AWS CA certificate
+static const char rootca_message[] = "Path to a CA file in .pem format";
 
 // AWS mqtt topic to subscribe/publish
 static const char topic_message[] = "Topic to publish and to subscribe to";
 
 // AWS Client ID
-static const char client_id_message[] = "Client id to use (optional)";
-
-// AWS CA certificate
-static const char ca_file_message[] = "Path to a CA file in PEM format";
+static const char clientid_message[] = "Client id to use (optional)";
 
 static const char pid_da_message[] = "PID of driver_actions.py";
 
@@ -292,19 +292,22 @@ DEFINE_bool(dlib_lm, false, "Acti");
 
 DEFINE_string(fg, "", "Path to gallery");
 
-DEFINE_string(endpoint, " ", endpoint_message);
+DEFINE_string(endpoint, "", endpoint_message);
 
-DEFINE_string(cert, " ", endpoint_message);
+DEFINE_string(cert, "", endpoint_message);
 
-DEFINE_string(key, " ", key_message);
+DEFINE_string(key, "", key_message);
 
-DEFINE_string(topic, " ", topic_message);
+DEFINE_string(rootca, "", rootca_message);
 
-DEFINE_string(client_id, " ", client_id_message);
+DEFINE_string(topic, "", topic_message);
+
+DEFINE_string(clientid, "", clientid_message);
 
 DEFINE_uint32(pid_da, 0, pid_da_message);
 
 DEFINE_uint32(init_drow, 0, init_drow_message);
+
 DEFINE_uint32(init_dist, 0, init_dist_message);
 
 /**
@@ -349,13 +352,14 @@ static void showUsage() {
     std::cout << "    -r                         " << raw_output_message << std::endl;
     std::cout << "    -o                         " << video_output_message << std::endl;
     std::cout << "    -t                         " << thresh_output_message << std::endl;
+    std::cout << "    -pid_da                    " << pid_da_message << std::endl;
+    std::cout << "    -init_drow                 " << init_drow_message << std::endl;
+    std::cout << "    -init_dist                 " << init_dist_message << std::endl;
     std::cout << " AWS options [OPTIONAL]:       " << std::endl;
     std::cout << "    -endpoint                  " << endpoint_message << std::endl;
     std::cout << "    -cert                      " << cert_message << std::endl;
     std::cout << "    -key                       " << key_message << std::endl;
+    std::cout << "    -rootca                    " << rootca_message << std::endl;
     std::cout << "    -topic                     " << topic_message << std::endl;
-    std::cout << "    -client_id                 " << client_id_message << std::endl;
-    std::cout << "    -pid_da                    " << pid_da_message << std::endl;
-    std::cout << "    -init_drow                 " << init_drow_message << std::endl;
-    std::cout << "    -init_dist                 " << init_dist_message << std::endl;
+    std::cout << "    -clientid                  " << clientid_message << std::endl;
 }

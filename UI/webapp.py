@@ -15,10 +15,12 @@ OPENVINO_SOURCE = '/opt/intel/openvino/bin/setupvars.sh'
 ROS_SOURCE = '/opt/ros/crystal/setup.bash'
 
 # Variables from file
-config = configparser.SafeConfigParser()
+config = configparser.RawConfigParser()
 config.read('config.ini')  # Take The parameters from config.ini file
-# Driver Management (ROS2 Workspace)
+# Reading values from config.ini
 workspace = os.path.join(config['workspace']['path'], '')
+endpoint = config['cloud']['endpoint']
+dashboard_url = config['cloud']['dashboard_url']
 
 # Variables Initialization
 dirname = os.path.dirname(__file__)
@@ -29,7 +31,6 @@ if not os.path.exists(file_input):
 aws_folder = workspace + "AWS/"
 if not os.path.exists(aws_folder):
     os.makedirs(aws_folder)
-aws_endpoint = 'a1572pdc8tbdas-ats.iot.us-east-1.amazonaws.com'
 
 driverbehavior_folder = workspace + "DriverBehavior/"
 actionrecognition_folder = workspace + "ActionRecognition/"
@@ -128,7 +129,9 @@ def run_driver_management():
 
         # Driver Actions Command
         command_driver_actions = "source " + ROS_SOURCE + " && source " + OPENVINO_SOURCE + \
-            " && cd " + actionrecognition_folder + " && python3 action_recognition.py -m_en models/FP32/driver-action-recognition-adas-0002-encoder.xml -m_de models/FP32/driver-action-recognition-adas-0002-decoder.xml -lb driver_actions.txt -l /opt/intel/openvino/inference_engine/lib/intel64/libcpu_extension_sse4.so -d " + json['target_actions']
+            " && cd " + actionrecognition_folder + \
+            " && python3 action_recognition.py -m_en models/FP32/driver-action-recognition-adas-0002-encoder.xml -m_de models/FP32/driver-action-recognition-adas-0002-decoder.xml -lb driver_actions.txt -l /opt/intel/openvino/inference_engine/lib/intel64/libcpu_extension_sse4.so -d " + \
+            json['target_actions']
 
         if (json['camera_actions'] == "0" and json['file_actions'] != ""):
             command_driver_actions += " -i '" + \
@@ -143,9 +146,10 @@ def run_driver_management():
         # Show the output in display
         if (json['show_output'] == "0"):
             command_driver_actions += " --no_show"
-        
-        if (json['aws_actions']):
-            command_driver_actions += " -e " + aws_endpoint + " -r " + aws_folder + "root_ca.pem -c " + \
+
+        # Send Data to AWS
+        if (json['send_to_aws']):
+            command_driver_actions += " -e " + endpoint + " -r " + aws_folder + "root_ca.pem -c " + \
                 aws_folder + "certificate.pem.crt -k " + \
                 aws_folder + "private.pem.key -t actions/"
 
@@ -170,13 +174,16 @@ def run_driver_management():
                     command_driver_behaviour += " -m $face216"
                 else:
                     command_driver_behaviour += " -m $face232"
-        
+
         # lib CPU extension
         command_driver_behaviour += " -l /opt/intel/openvino/inference_engine/lib/intel64/libcpu_extension_sse4.so -c /opt/intel/openvino/inference_engine/lib/intel64/libclDNNPlugin.so "
         
-        # AWS certificates
-        #command_driver_behaviour += " -endpoint a1572pdc8tbdas-ats.iot.us-east-1.amazonaws.com -ca_file /app/AWS/AmazonRootCA1.pem -cert /app/AWS/a81867df13-certificate.pem.crt -key /app/AWS/a81867df13-private.pem.key -topic drivers/"
-        
+        # Send Data to AWS
+        if (json['send_to_aws']):
+            command_driver_behaviour += " -endpoint " + endpoint + " -rootca " + aws_folder + "root_ca.pem -cert " + \
+                aws_folder + "certificate.pem.crt -key " + \
+                aws_folder + "private.pem.key -topic drivers/ -clientid NEXCOM_device"
+
         # Recognition of the Driver
         if (json['recognition'] == "1"):
             command_driver_behaviour += " -d_recognition -fg " + \
@@ -263,7 +270,8 @@ def create_driver_management():
 @app.route('/dashboard')
 def dashboard():
     templateData = {  # Sending the data to the frontend
-        'title': "Dashboard"
+        'title': "Dashboard",
+        'dashboard_url': dashboard_url
     }
     return render_template("dashboard.html", **templateData)
 
@@ -285,7 +293,7 @@ def drivers():
     return render_template("drivers.html", **templateData)
 
 
-@app.route("/config")
+@app.route("/configuration")
 def configuration():
     templateData = {  # Sending the data to the frontend
         'title': "Configuration",
@@ -322,13 +330,37 @@ def delete_file():
     return redirect(url_for('downloads'))
 
 
-@app.route("/certificates")
-def certificates():
+@app.route("/cloud-configuration")
+def cloud_configuration():
     templateData = {  # Sending the data to the frontend
-        'title': "Certificates Configuration",
-        'workspace': workspace
+        'title': "Cloud Configuration",
+        'endpoint': endpoint,
+        'dashboard_url': dashboard_url
     }
-    return render_template("certificates.html", **templateData)
+    return render_template("cloud-configuration.html", **templateData)
+
+
+@app.route('/cloud_config', methods=['POST', 'GET'])
+# This functions saves the new configuration in the config.ini file.
+def cloud_config():
+    if request.method == 'POST':
+        out = False
+        json = request.get_json()
+
+        config['cloud']['endpoint'] = json['endpoint']
+        config['cloud']['dashboard_url'] = json['dashboard_url']
+
+        # Saving variables in config.ini
+        with open('config.ini', 'w') as configfile:
+            config.write(configfile)
+            out = True
+
+        # Variables are updated with the new values.
+        global endpoint, dashboard_url
+        endpoint = config['cloud']['endpoint']
+        dashboard_url = config['cloud']['dashboard_url']
+
+    return jsonify(out=out)
 
 
 @app.route('/upload_certificates', methods=['POST', 'GET'])
@@ -347,11 +379,6 @@ def upload_certificates():
             if private_key:
                 file = request.files["private_key"]
                 file.save(os.path.join(aws_folder, 'private.pem.key'))
-            # Public Key
-            public_key = request.files.get('public_key', False)
-            if public_key:
-                file = request.files["public_key"]
-                file.save(os.path.join(aws_folder, 'public.pem.key'))
             # RootCA
             root_ca = request.files.get('root_ca', False)
             if root_ca:

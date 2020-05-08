@@ -29,7 +29,6 @@
 #include "classes.hpp"
 #include "picojson.hpp"
 
-
 #include <ie_iextension.h>
 
 #include <opencv2/opencv.hpp>
@@ -47,7 +46,6 @@
 
 #include <boost/circular_buffer.hpp>
 
-
 #include "rclcpp/rclcpp.hpp"
 #include "ets_msgs/msg/truck.hpp"
 
@@ -56,20 +54,17 @@
 #include <fcntl.h>
 #include <errno.h>
 
-
-#include <sys/ioctl.h>  // Library to use ioctl function
-
+#include <sys/ioctl.h> // Library to use ioctl function
 
 void ros_client(Truck *truck)
 {
 	auto node = rclcpp::Node::make_shared("ets_client");
 
 	auto sub = node->create_subscription<ets_msgs::msg::Truck>(
-			"truck", std::bind(&Truck::ros_callback, truck, std::placeholders::_1), rmw_qos_profile_default);
+		"truck", std::bind(&Truck::ros_callback, truck, std::placeholders::_1), rmw_qos_profile_default);
 
 	rclcpp::spin(node);
 }
-
 
 using namespace InferenceEngine;
 
@@ -142,7 +137,7 @@ int isDistracted(float y, float p, float r)
 }
 
 bool identify_driver(cv::Mat frame, std::vector<FaceDetection::Result> *results, VectorCNN *landmarks_detector,
-		VectorCNN *face_reid, EmbeddingsGallery *face_gallery, std::string *driver_name)
+					 VectorCNN *face_reid, EmbeddingsGallery *face_gallery, std::string *driver_name)
 {
 	bool ret = false;
 	std::vector<cv::Mat> face_rois, landmarks, embeddings;
@@ -198,7 +193,6 @@ int firstTime = 0;
 Truck truck;
 bool fSim = false;
 
-
 int maxNormal = 40;
 int maxWarning = 70;
 int maxCritical = 100; //Max Drowsiness value
@@ -230,6 +224,8 @@ std::string labelAlarm = "";
 cv::Mat face_save;
 bool firstPhoto = true;
 
+bool connectionSucceeded = false;
+
 void alarmDrowsiness(cv::Mat prev_frame, int yawn_total, int blinl_total, int width, int height, int x_alarm, int y_alarm, int x_truck_i, bool headbutt)
 {
 	// Headbutt Logic
@@ -250,23 +246,25 @@ void alarmDrowsiness(cv::Mat prev_frame, int yawn_total, int blinl_total, int wi
 	//VU Meter Logic
 	if ((tDrowsiness <= maxNormal) && (vYawn != 0 || vBlink != 0) && !truck.getParkingBrake())
 	{
-		if (tDrowsiness <= 100){
+		if (tDrowsiness <= 100)
+		{
 			tDrowsiness += 10 * vYawn + 5 * vBlink * (timeBlink / 1000);
 		}
 		else
-			tDrowsiness=100.0;
-		
+			tDrowsiness = 100.0;
+
 		startNoDrowsiness = 0;
 	}
 
 	else if ((tDrowsiness > maxNormal) && (vYawn != 0 || vBlink != 0 || vHeadbutt != 0) && !truck.getParkingBrake())
 	{
-		if (tDrowsiness <= 100){
+		if (tDrowsiness <= 100)
+		{
 			tDrowsiness += 5 * vYawn + 10 * vBlink * (timeBlink / 1000) + vHeadbutt * 30;
 		}
 		else
-			tDrowsiness=100.0;
-		
+			tDrowsiness = 100.0;
+
 		startNoDrowsiness = 0;
 	}
 	else
@@ -339,23 +337,23 @@ void alarmDistraction(cv::Mat prev_frame, int is_dist, int y_alarm, int x_truck_
 	{
 		switch (is_dist)
 		{
-			case DISTRACTED:
-				if (truck.getSpeed() * 3.6 >= 5 || !fSim)
-				{
-					labelAlarm = "EYES OUT OF ROAD";
-					falarmDistraction = true;
-				}
-				break;
-			case PHONE:
-				if (truck.getSpeed() * 3.6 >= 2 || truck.getSpeed() * 3.6 <= -2 || !fSim)
-				{
-					labelAlarm = "LOOKING AT THE PHONE";
-					falarmDistraction = true;
-				}
-				break;
-			default:
-				falarmDistraction = false;
-				break;
+		case DISTRACTED:
+			if (truck.getSpeed() * 3.6 >= 5 || !fSim)
+			{
+				labelAlarm = "EYES OUT OF ROAD";
+				falarmDistraction = true;
+			}
+			break;
+		case PHONE:
+			if (truck.getSpeed() * 3.6 >= 2 || truck.getSpeed() * 3.6 <= -2 || !fSim)
+			{
+				labelAlarm = "LOOKING AT THE PHONE";
+				falarmDistraction = true;
+			}
+			break;
+		default:
+			falarmDistraction = false;
+			break;
 		}
 	}
 	else
@@ -379,12 +377,12 @@ void alarmDistraction(cv::Mat prev_frame, int is_dist, int y_alarm, int x_truck_
 		}
 		timer.start("timeDistraction");
 		// End Distraction Logic
-		if(tDistraction<100.0){
+		if (tDistraction < 100.0)
+		{
 			tDistraction += 10 * vDistraction * (timeDistraction / 1000);
 		}
 		else
-			tDistraction=100.0;
-		
+			tDistraction = 100.0;
 	}
 	else
 	{
@@ -460,13 +458,13 @@ void alarmDistraction(cv::Mat prev_frame, int is_dist, int y_alarm, int x_truck_
 void driver_recognition(cv::Mat prev_frame, std::vector<FaceDetection::Result> prev_detection_results, VectorCNN landmarks_detector, VectorCNN face_reid, EmbeddingsGallery face_gallery, std::string *driver_name, int x_truck_i, int y_driver_i)
 {
 	if (timer["face_identified"].getSmoothedDuration() > 60000.0 && face_identified && firstTime == 1 ||
-			timer["face_identified"].getSmoothedDuration() > 1000.0 && !face_identified && firstTime == 1 ||
-			firstTime == 0)
+		timer["face_identified"].getSmoothedDuration() > 1000.0 && !face_identified && firstTime == 1 ||
+		firstTime == 0)
 	{
 		cv::Mat aux_prev_frame = prev_frame.clone();
-		
+
 		face_identified = identify_driver(aux_prev_frame, &prev_detection_results, &landmarks_detector, &face_reid, &face_gallery, driver_name);
-		
+
 		if (!prev_detection_results.empty())
 			cv::rectangle(prev_frame, prev_detection_results[0].location, cv::Scalar(255, 255, 255), 1);
 		firstTime = 1;
@@ -527,12 +525,10 @@ int headbuttDetection(boost::circular_buffer<double> *angle_p)
 
 int main(int argc, char *argv[])
 {
-    
 
-rclcpp::init(argc, argv);
-std::thread truck_data(ros_client, &truck);
-fSim = true;
-
+	rclcpp::init(argc, argv);
+	std::thread truck_data(ros_client, &truck);
+	fSim = true;
 
 	try
 	{
@@ -595,10 +591,11 @@ fSim = true;
 		const size_t height = (size_t)cap.get(cv::CAP_PROP_FRAME_HEIGHT);
 
 		// Save the ouput
-        cv::VideoWriter video_output;
-        if (FLAGS_o) {
-            video_output = cv::VideoWriter("video_output.avi",cv::VideoWriter::fourcc('M','J','P','G'),10, cv::Size(width,height),true);
-        }
+		cv::VideoWriter video_output;
+		if (FLAGS_o)
+		{
+			video_output = cv::VideoWriter("video_output.avi", cv::VideoWriter::fourcc('M', 'J', 'P', 'G'), 10, cv::Size(width, height), true);
+		}
 
 		int x = 200;
 		int y = 155;
@@ -617,8 +614,7 @@ fSim = true;
 		// --------------------------- 1. Load Plugin for inference engine -------------------------------------
 		std::map<std::string, Core> pluginsForDevices;
 		std::vector<std::pair<std::string, std::string>> cmdOptions = {
-			{FLAGS_d, FLAGS_m}, {FLAGS_d_ag, FLAGS_m_ag}, {FLAGS_d_hp, FLAGS_m_hp},
-			{FLAGS_d_em, FLAGS_m_em}, {FLAGS_d_lm, FLAGS_m_lm}, {FLAGS_d_reid, FLAGS_m_reid}};
+			{FLAGS_d, FLAGS_m}, {FLAGS_d_ag, FLAGS_m_ag}, {FLAGS_d_hp, FLAGS_m_hp}, {FLAGS_d_em, FLAGS_m_em}, {FLAGS_d_lm, FLAGS_m_lm}, {FLAGS_d_reid, FLAGS_m_reid}};
 
 		for (auto &&option : cmdOptions)
 		{
@@ -633,23 +629,23 @@ fSim = true;
 			slog::info << "Loading plugin " << deviceName << slog::endl;
 			Core core;
 			/** Load extensions for the CPU plugin **/
-			if ((deviceName.find("CPU") != std::string::npos)) {
+			if ((deviceName.find("CPU") != std::string::npos))
+			{
 				if (!FLAGS_l.empty())
 				{
 					// CPU(MKLDNN) extensions are loaded as a shared library and passed as a pointer to base extension
-                    auto extension_ptr = make_so_pointer<IExtension>(FLAGS_l);
+					auto extension_ptr = make_so_pointer<IExtension>(FLAGS_l);
 					core.AddExtension(extension_ptr, deviceName);
 					slog::info << "CPU Extension loaded: " << FLAGS_l << slog::endl;
 				}
 				//core.SetConfig({{ CONFIG_KEY(CPU_THROUGHPUT_STREAMS), std::to_string(12) }}, deviceName);
-				core.SetConfig({{ CONFIG_KEY(CPU_THREADS_NUM), std::to_string(4) }},deviceName);
-				core.SetConfig({{ CONFIG_KEY(CPU_BIND_THREAD), "YES" }}, deviceName);
-
+				core.SetConfig({{CONFIG_KEY(CPU_THREADS_NUM), std::to_string(4)}}, deviceName);
+				core.SetConfig({{CONFIG_KEY(CPU_BIND_THREAD), "YES"}}, deviceName);
 			}
 			else if (!FLAGS_c.empty())
 				core.SetConfig({{PluginConfigParams::KEY_CONFIG_FILE, FLAGS_c}}, deviceName);
 
-			core.SetConfig({{PluginConfigParams::KEY_DYN_BATCH_ENABLED, PluginConfigParams::YES}},deviceName);
+			core.SetConfig({{PluginConfigParams::KEY_DYN_BATCH_ENABLED, PluginConfigParams::YES}}, deviceName);
 			pluginsForDevices[deviceName] = core;
 		}
 
@@ -736,58 +732,61 @@ fSim = true;
 
 		Aws::Crt::ApiHandle apiHandle;
 
-		Aws::Crt::String endpoint("a1572pdc8tbdas-ats.iot.us-east-1.amazonaws.com");
-		Aws::Crt::String certificatePath("/app/AWS/a81867df13-certificate.pem.crt");
-		Aws::Crt::String keyPath("/app/AWS/a81867df13-private.pem.key");
-		Aws::Crt::String caFile("/app/AWS/AmazonRootCA1.pem");
-		Aws::Crt::String topic("drivers/");
-		Aws::Crt::String clientId("NEXCOM_device");
+		Aws::Crt::String endpoint(FLAGS_endpoint.c_str());
+		Aws::Crt::String certificatePath(FLAGS_cert.c_str());
+		Aws::Crt::String keyPath(FLAGS_key.c_str());
+		Aws::Crt::String caFile(FLAGS_rootca.c_str());
+		Aws::Crt::String topic(FLAGS_topic.c_str());
+		Aws::Crt::String clientId(FLAGS_clientid.c_str());
 
 		Aws::Crt::Io::EventLoopGroup eventLoopGroup(1);
-		if (!eventLoopGroup) {
+		if (!eventLoopGroup)
+		{
 			fprintf(stderr, "Event Loop Group Creation failed with error %s\n", Aws::Crt::ErrorDebugString(eventLoopGroup.LastError()));
 			exit(-1);
 		}
 		Aws::Crt::Io::DefaultHostResolver defaultHostResolver(eventLoopGroup, 1, 5);
 		Aws::Crt::Io::ClientBootstrap bootstrap(eventLoopGroup, defaultHostResolver);
-		if (!bootstrap) {
+		if (!bootstrap)
+		{
 			fprintf(stderr, "ClientBootstrap failed with error %s\n", Aws::Crt::ErrorDebugString(bootstrap.LastError()));
 			exit(-1);
 		}
 
 		auto clientConfig = Aws::Iot::MqttClientConnectionConfigBuilder(certificatePath.c_str(), keyPath.c_str())
-			.WithEndpoint(endpoint)
-			.WithCertificateAuthority(caFile.c_str())
-			.Build();
+								.WithEndpoint(endpoint)
+								.WithCertificateAuthority(caFile.c_str())
+								.Build();
 
-		if (!clientConfig) {
+		if (!clientConfig)
+		{
 			fprintf(stderr, "Client Configuration initialization failed with error %s\n", Aws::Crt::ErrorDebugString(Aws::Crt::LastError()));
 			exit(-1);
 		}
 
 		Aws::Iot::MqttClient mqttClient(bootstrap);
-		if (!mqttClient) {
+		if (!mqttClient)
+		{
 			fprintf(stderr, "MQTT Client Creation failed with error %s\n", Aws::Crt::ErrorDebugString(mqttClient.LastError()));
 			exit(-1);
 		}
 
 		auto connection = mqttClient.NewConnection(clientConfig);
-		if (!*connection) {
+		if (!*connection)
+		{
 			fprintf(stderr, "MQTT Connection Creation failed with error %s\n", Aws::Crt::ErrorDebugString(connection->LastError()));
 			exit(-1);
 		}
 
-
 		std::mutex mutex;
 		std::condition_variable conditionVariable;
-		bool connectionSucceeded = false;
 		bool connectionClosed = false;
 		bool connectionCompleted = false;
 		bool connectionInterrupted = false;
 
 		/*
-		 * This will execute when an mqtt connect has completed or failed.
-		 */
+			* This will execute when an mqtt connect has completed or failed.
+			*/
 		auto onConnectionCompleted = [&](Aws::Crt::Mqtt::MqttConnection &, int errorCode, Aws::Crt::Mqtt::ReturnCode returnCode, bool) {
 			if (errorCode)
 			{
@@ -812,14 +811,14 @@ fSim = true;
 			connectionInterrupted = true;
 		};
 
-		auto onResumed = [&](Aws::Crt::Mqtt::MqttConnection &, Aws::Crt::Mqtt::ReturnCode, bool) { 
+		auto onResumed = [&](Aws::Crt::Mqtt::MqttConnection &, Aws::Crt::Mqtt::ReturnCode, bool) {
 			fprintf(stdout, "Connection resumed\n");
 			connectionInterrupted = false;
 		};
 
 		/*
-		 * Invoked when a disconnect message has completed.
-		 */
+			* Invoked when a disconnect message has completed.
+			*/
 		auto onDisconnect = [&](Aws::Crt::Mqtt::MqttConnection &conn) {
 			{
 				fprintf(stdout, "Disconnect completed\n");
@@ -842,8 +841,8 @@ fSim = true;
 		};
 
 		/*
-		 * Subscribe for incoming publish messages on topic.
-		 */
+			* Subscribe for incoming publish messages on topic.
+			*/
 		auto onSubAck = [&](Aws::Crt::Mqtt::MqttConnection &, uint16_t packetId, const Aws::Crt::String &topic, Aws::Crt::Mqtt::QOS, int errorCode) {
 			if (packetId)
 			{
@@ -856,14 +855,14 @@ fSim = true;
 			conditionVariable.notify_one();
 		};
 
-
 		/*
-		 * Actually perform the connect dance.
-		 * This will use default ping behavior of 1 hour and 3 second timeouts.
-		 * If you want different behavior, those arguments go into slots 3 & 4.
-		 */
+			* Actually perform the connect dance.
+			* This will use default ping behavior of 1 hour and 3 second timeouts.
+			* If you want different behavior, those arguments go into slots 3 & 4.
+			*/
 		fprintf(stdout, "Connecting...\n");
-		if (!connection->Connect(clientId.c_str(), false, 20)) {
+		if (!connection->Connect(clientId.c_str(), false, 20))
+		{
 			fprintf(stderr, "MQTT Connection failed with error %s\n", Aws::Crt::ErrorDebugString(connection->LastError()));
 			exit(-1);
 		}
@@ -871,509 +870,515 @@ fSim = true;
 		std::unique_lock<std::mutex> uniqueLock(mutex);
 		conditionVariable.wait(uniqueLock, [&]() { return connectionCompleted; });
 
-		if (connectionSucceeded) {
-			
+		if (connectionSucceeded)
+		{
 			connection->Subscribe(topic.c_str(), AWS_MQTT_QOS_AT_MOST_ONCE, onPublish, onSubAck);
-			
-			while (true)
-			{	
-				picojson::value v;
-				picojson::value v1;
-				framesCounter++;
-				isLastFrame = !frameReadStatus;
+		}
 
-				timer.start("detection");
-				// Retrieve face detection results for previous frame.
-				faceDetector.wait();
-				faceDetector.fetchResults();
-				auto prev_detection_results = faceDetector.results;
-				if (!prev_detection_results.empty())
-				{
-					for (int i = 0; i < prev_detection_results.size(); i++)
-					{
-						if (big_head.location.area() < prev_detection_results[i].location.area())
-						{
-							big_head = prev_detection_results[i];
-							biggest_head = i;
-						}
-					}
-					prev_detection_results.clear();
-					prev_detection_results.push_back(big_head);
-					big_head.label = 0;
-					big_head.confidence = 0;
-					big_head.location = cv::Rect(0, 0, 0, 0);
-				}
-				// No valid frame to infer if previous frame is last.
-				if (!isLastFrame)
-				{
-					faceDetector.enqueue(frame);
-					faceDetector.submitRequest();
-				}
-				timer.finish("detection");
+		while (true)
+		{
+			picojson::value v;
+			picojson::value v1;
+			framesCounter++;
+			isLastFrame = !frameReadStatus;
 
-				timer.start("data preprocessing");
-				// Fill inputs of face analytics networks.
-				for (auto &&face : prev_detection_results)
+			timer.start("detection");
+			// Retrieve face detection results for previous frame.
+			faceDetector.wait();
+			faceDetector.fetchResults();
+			auto prev_detection_results = faceDetector.results;
+			if (!prev_detection_results.empty())
+			{
+				for (int i = 0; i < prev_detection_results.size(); i++)
 				{
-					if (isFaceAnalyticsEnabled)
+					if (big_head.location.area() < prev_detection_results[i].location.area())
 					{
-						auto clippedRect = face.location & cv::Rect(0, 0, width, height);
-						cv::Mat face = prev_frame(clippedRect);
-						face_save = frame(clippedRect);
-						headPoseDetector.enqueue(face);
+						big_head = prev_detection_results[i];
+						biggest_head = i;
 					}
 				}
-				timer.finish("data preprocessing");
+				prev_detection_results.clear();
+				prev_detection_results.push_back(big_head);
+				big_head.label = 0;
+				big_head.confidence = 0;
+				big_head.location = cv::Rect(0, 0, 0, 0);
+			}
+			// No valid frame to infer if previous frame is last.
+			if (!isLastFrame)
+			{
+				faceDetector.enqueue(frame);
+				faceDetector.submitRequest();
+			}
+			timer.finish("detection");
 
-				// Run age-gender recognition, head pose estimation and emotions recognition simultaneously.
-				timer.start("face analytics call");
+			timer.start("data preprocessing");
+			// Fill inputs of face analytics networks.
+			for (auto &&face : prev_detection_results)
+			{
 				if (isFaceAnalyticsEnabled)
 				{
-					headPoseDetector.submitRequest();
+					auto clippedRect = face.location & cv::Rect(0, 0, width, height);
+					cv::Mat face = prev_frame(clippedRect);
+					face_save = frame(clippedRect);
+					headPoseDetector.enqueue(face);
 				}
-				timer.finish("face analytics call");
+			}
+			timer.finish("data preprocessing");
 
-				// Read next frame if current one is not last.
-				if (!isLastFrame)
-				{
-					timer.start("video frame decoding");
-					frameReadStatus = cap.read(next_frame);
-					timer.finish("video frame decoding");
-				}
-				if (!frameReadStatus) {
-					timer.finish("total");
-					break;
-				}
+			// Run age-gender recognition, head pose estimation and emotions recognition simultaneously.
+			timer.start("face analytics call");
+			if (isFaceAnalyticsEnabled)
+			{
+				headPoseDetector.submitRequest();
+			}
+			timer.finish("face analytics call");
 
-				timer.start("face analytics wait");
-				if (isFaceAnalyticsEnabled)
-				{
-					headPoseDetector.wait();
-				}
-				timer.finish("face analytics wait");
+			// Read next frame if current one is not last.
+			if (!isLastFrame)
+			{
+				timer.start("video frame decoding");
+				frameReadStatus = cap.read(next_frame);
+				timer.finish("video frame decoding");
+			}
+			if (!frameReadStatus)
+			{
+				timer.finish("total");
+				break;
+			}
 
-				// Visualize results.
-				if (true) // if (!FLAGS_no_show)
-				{
-					TrackedObjects tracked_face_objects;
-					timer.start("visualization");
-					out.str("");
-					out << "OpenCV cap/render time: " << std::fixed << std::setprecision(2)
-						<< (timer["video frame decoding"].getSmoothedDuration() +
-								timer["visualization"].getSmoothedDuration())
-						<< " ms";
-					cv::putText(prev_frame, out.str(), cv::Point2f(10, 25), cv::FONT_HERSHEY_TRIPLEX, 0.4,
+			timer.start("face analytics wait");
+			if (isFaceAnalyticsEnabled)
+			{
+				headPoseDetector.wait();
+			}
+			timer.finish("face analytics wait");
+
+			// Visualize results.
+			if (true) // if (!FLAGS_no_show)
+			{
+				TrackedObjects tracked_face_objects;
+				timer.start("visualization");
+				out.str("");
+				out << "OpenCV cap/render time: " << std::fixed << std::setprecision(2)
+					<< (timer["video frame decoding"].getSmoothedDuration() +
+						timer["visualization"].getSmoothedDuration())
+					<< " ms";
+				cv::putText(prev_frame, out.str(), cv::Point2f(10, 25), cv::FONT_HERSHEY_TRIPLEX, 0.4,
 							cv::Scalar(255, 0, 0));
 
-					out.str("");
-					out << "Face detection time: " << std::fixed << std::setprecision(2)
-						<< timer["detection"].getSmoothedDuration()
-						<< " ms ("
-						<< 1000.F / (timer["detection"].getSmoothedDuration())
-						<< " fps)";
-					cv::putText(prev_frame, out.str(), cv::Point2f(10, 45), cv::FONT_HERSHEY_TRIPLEX, 0.4,
+				out.str("");
+				out << "Face detection time: " << std::fixed << std::setprecision(2)
+					<< timer["detection"].getSmoothedDuration()
+					<< " ms ("
+					<< 1000.F / (timer["detection"].getSmoothedDuration())
+					<< " fps)";
+				cv::putText(prev_frame, out.str(), cv::Point2f(10, 45), cv::FONT_HERSHEY_TRIPLEX, 0.4,
 							cv::Scalar(255, 0, 0));
 
-					out.str("");
-					out << "Total image throughput: "          
-						<< framesCounter * (1000.F / timer["total"].getSmoothedDuration())
-						<< " FPS";
-					cv::putText(prev_frame, out.str(), cv::Point2f(10, 65), cv::FONT_HERSHEY_TRIPLEX, 0.4,
+				out.str("");
+				out << "Total image throughput: "
+					<< framesCounter * (1000.F / timer["total"].getSmoothedDuration())
+					<< " FPS";
+				cv::putText(prev_frame, out.str(), cv::Point2f(10, 65), cv::FONT_HERSHEY_TRIPLEX, 0.4,
 							cv::Scalar(0, 255, 0));
 
-					if (isFaceAnalyticsEnabled)
+				if (isFaceAnalyticsEnabled)
+				{
+					out.str("");
+					out << "Face Analysics Networks "
+						<< "time: " << std::fixed << std::setprecision(2)
+						<< timer["face analytics call"].getSmoothedDuration() +
+							   timer["face analytics wait"].getSmoothedDuration()
+						<< " ms ";
+					if (!prev_detection_results.empty())
 					{
-						out.str("");
-						out << "Face Analysics Networks "
-							<< "time: " << std::fixed << std::setprecision(2)
-							<< timer["face analytics call"].getSmoothedDuration() +
-							timer["face analytics wait"].getSmoothedDuration()
-							<< " ms ";
-						if (!prev_detection_results.empty())
-						{
-							out << "("
-								<< 1000.F / (timer["face analytics call"].getSmoothedDuration() +
-										timer["face analytics wait"].getSmoothedDuration())
-								<< " fps)";
-						}
-						cv::putText(prev_frame, out.str(), cv::Point2f(10, 85), cv::FONT_HERSHEY_TRIPLEX, 0.4,
-								cv::Scalar(255, 0, 0));
-
-						
-								
+						out << "("
+							<< 1000.F / (timer["face analytics call"].getSmoothedDuration() +
+										 timer["face analytics wait"].getSmoothedDuration())
+							<< " fps)";
 					}
-					
-					if ((truck.getEngine() && fSim) || !fSim) // Detect if Engine = ON and Simulator Flag
-					{ 
-						// Thread 1: Driver Recognition
-						timer.start("land marks");
-						std::thread thread_recognition(driver_recognition, prev_frame, prev_detection_results, landmarks_detector, face_reid, face_gallery, &driver_name, x_truck_i, y_driver_i);
-						timer.finish("land marks");
+					cv::putText(prev_frame, out.str(), cv::Point2f(10, 85), cv::FONT_HERSHEY_TRIPLEX, 0.4,
+								cv::Scalar(255, 0, 0));
+				}
+
+				if ((truck.getEngine() && fSim) || !fSim) // Detect if Engine = ON and Simulator Flag
+				{
+					// Thread 1: Driver Recognition
+					timer.start("land marks");
+					std::thread thread_recognition(driver_recognition, prev_frame, prev_detection_results, landmarks_detector, face_reid, face_gallery, &driver_name, x_truck_i, y_driver_i);
+					timer.finish("land marks");
+
+					out.str("");
+					out << "Test "
+						<< "time: " << std::fixed << std::setprecision(2)
+						<< timer["land marks"].getSmoothedDuration()
+						<< " ms ";
+					if (timer["land marks"].getSmoothedDuration() > 0)
+					{
+
+						out << "("
+							<< 1000.F / timer["land marks"].getSmoothedDuration()
+							<< " fps)";
+					}
+
+					cv::putText(prev_frame, out.str(), cv::Point2f(10, 105), cv::FONT_HERSHEY_TRIPLEX, 0.4,
+								cv::Scalar(255, 0, 0));
+
+					// Driver Label (CHECK! -> Not here)
+					cv::rectangle(prev_frame, cv::Rect(width - (x + 40), y_driver_i, x + 20, y_driver), cv::Scalar(0, 0, 0), -1);
+					cv::rectangle(prev_frame, cv::Rect(width - (x + 40), y_driver_i, x + 20, y_driver), cv::Scalar(255, 255, 255), 2);
+
+					// For every detected face.
+					int ii = 0;
+					std::vector<cv::Point2f> left_eye;
+					std::vector<cv::Point2f> right_eye;
+					std::vector<cv::Point2f> mouth;
+					for (auto &result : prev_detection_results)
+					{
+						cv::Rect rect = result.location;
 
 						out.str("");
-						out << "Test "
-							<< "time: " << std::fixed << std::setprecision(2)
-							<< timer["land marks"].getSmoothedDuration()
-							<< " ms ";
-						if (timer["land marks"].getSmoothedDuration()>0)
+						cv::rectangle(prev_frame, rect, cv::Scalar(255, 255, 255), 1);
+						if (FLAGS_dlib_lm)
 						{
-							
-							out << "("
-								<< 1000.F / timer["land marks"].getSmoothedDuration()
-								<< " fps)";
-								
+							float scale_factor_x = 0.15;
+							float scale_factor_y = 0.20;
+							cv::Rect aux_rect = cv::Rect(rect.x + scale_factor_x * rect.width, rect.y + scale_factor_y * rect.height, rect.width * (1 - 2 * scale_factor_x), rect.height * (1 - scale_factor_y));
+							//dlib facial landmarks
+							dlib::array2d<dlib::rgb_pixel> img;
+							dlib::assign_image(img, dlib::cv_image<dlib::bgr_pixel>(prev_frame));
+							dlib::rectangle det = openCVRectToDlib(aux_rect);
+							dlib::full_object_detection shape = sp(img, det);
+							for (int i = 0; i < shape.num_parts(); i++)
+							{
+								if (i >= 36 && i <= 41)
+								{
+									left_eye.push_back(cv::Point2l(shape.part(i).x(), shape.part(i).y()));
+									cv::circle(prev_frame, cv::Point2l(shape.part(i).x(), shape.part(i).y()), 1 + static_cast<int>(0.0012 * rect.width), cv::Scalar(0, 255, 255), -1);
+								}
+								if (i >= 42 && i <= 47)
+								{
+									right_eye.push_back(cv::Point2l(shape.part(i).x(), shape.part(i).y()));
+									cv::circle(prev_frame, cv::Point2l(shape.part(i).x(), shape.part(i).y()), 1 + static_cast<int>(0.0012 * rect.width), cv::Scalar(0, 255, 255), -1);
+								}
+								//48 - 54. 50 - 58. 52 - 56.
+
+								if (i == 48 || i == 54 || i == 50 || i == 58 || i == 52 || i == 56)
+								{
+									mouth.push_back(cv::Point2l(shape.part(i).x(), shape.part(i).y()));
+									cv::circle(prev_frame, cv::Point2l(shape.part(i).x(), shape.part(i).y()), 1 + static_cast<int>(0.0012 * rect.width), cv::Scalar(0, 255, 255), -1);
+								}
+							}
+							float ear_left = 0;
+							float ear_right = 0;
+							float ear = 0;
+							ear_left = (distanceAtoB(left_eye[1], left_eye[5]) + distanceAtoB(left_eye[2], left_eye[4])) / (2 * distanceAtoB(left_eye[0], left_eye[3]));
+							ear_right = (distanceAtoB(right_eye[1], right_eye[5]) + distanceAtoB(right_eye[2], right_eye[4])) / (2 * distanceAtoB(right_eye[0], right_eye[3]));
+							ear = (ear_left + ear_right) / 2;
+							ear_5.push_front(ear);
+							float ear_avg = 0;
+							for (auto &&i : ear_5)
+							{
+								ear_avg = ear_avg + i;
+							}
+							ear_avg = ear_avg / ear_5.size();
+							if (ear_avg < EYE_AR_THRESH)
+							{
+								// Blink Logic
+								vBlink = 1;
+								if (firstBlink)
+								{
+									timeBlink = 0;
+									firstBlink = false;
+								}
+								else
+								{
+									timeBlink = timer["timeBlink"].getSmoothedDuration() - timeBlink;
+								}
+								timer.start("timeBlink");
+								// End Blink Logic
+
+								blink_counter += 1;
+								if (blink_counter >= 90)
+									eye_closed = true;
+							}
+							else
+							{
+								if (blink_counter >= EYE_AR_CONSEC_FRAMES)
+								{
+									blinl_total += 1;
+									last_blink_counter = blink_counter;
+								}
+								blink_counter = 0;
+
+								// Blink Logic
+								vBlink = 0;
+								timeBlink = 0;
+								firstBlink = true;
+								// End Blink Logic
+							}
+
+							cv::putText(prev_frame, "Blinks: " + std::to_string(blinl_total), cv::Point2f(x_truck_i, y_driver_i + 60), cv::FONT_HERSHEY_SIMPLEX, 0.5, cv::Scalar(255, 255, 255), 1);
+
+							//Yawn detection
+							float ear_mouth = (distanceAtoB(mouth[1], mouth[5]) + distanceAtoB(mouth[2], mouth[4])) / (2 * distanceAtoB(mouth[0], mouth[3]));
+							ear_5_mouth.push_front(ear_mouth);
+							float ear_avg_mouth = 0;
+							for (auto &&i : ear_5_mouth)
+							{
+								ear_avg_mouth = ear_avg_mouth + i;
+							}
+							ear_avg_mouth = ear_avg_mouth / ear_5_mouth.size();
+							if (ear_avg_mouth > MOUTH_EAR_THRESH)
+							{
+								yawn_counter += 1;
+							}
+							else
+							{
+								if (yawn_counter >= MOUTH_EAR_CONSEC_FRAMES)
+								{
+									vYawn = 1;
+									yawn_total += 1;
+								}
+								yawn_counter = 0;
+							}
+							cv::putText(prev_frame, "Yawns: " + std::to_string(yawn_total), cv::Point2f(x_truck_i, y_driver_i + 80), cv::FONT_HERSHEY_SIMPLEX, 0.5, cv::Scalar(255, 255, 255), 1);
 						}
 
-						cv::putText(prev_frame, out.str(), cv::Point2f(10, 105), cv::FONT_HERSHEY_TRIPLEX, 0.4,
-								cv::Scalar(255, 0, 0));
-								
-						// Driver Label (CHECK! -> Not here)
-						cv::rectangle(prev_frame, cv::Rect(width - (x + 40), y_driver_i, x + 20, y_driver), cv::Scalar(0, 0, 0), -1);
-						cv::rectangle(prev_frame, cv::Rect(width - (x + 40), y_driver_i, x + 20, y_driver), cv::Scalar(255, 255, 255), 2);
+						cv::putText(prev_frame,
+									out.str(),
+									cv::Point2f(result.location.x, result.location.y - 15),
+									cv::FONT_HERSHEY_COMPLEX_SMALL,
+									0.8,
+									cv::Scalar(0, 0, 255));
 
-						// For every detected face.
-						int ii = 0;
-						std::vector<cv::Point2f> left_eye;
-						std::vector<cv::Point2f> right_eye;
-						std::vector<cv::Point2f> mouth;
-						for (auto &result : prev_detection_results)
+						if (headPoseDetector.enabled() && ii < headPoseDetector.maxBatch)
 						{
-							cv::Rect rect = result.location;
-
-							out.str("");
-							cv::rectangle(prev_frame, rect, cv::Scalar(255, 255, 255), 1);
-							if (FLAGS_dlib_lm)
+							if (FLAGS_r)
 							{
-								float scale_factor_x = 0.15;
-								float scale_factor_y = 0.20;
-								cv::Rect aux_rect = cv::Rect(rect.x + scale_factor_x * rect.width, rect.y + scale_factor_y * rect.height, rect.width * (1 - 2 * scale_factor_x), rect.height * (1 - scale_factor_y));
-								//dlib facial landmarks
-								dlib::array2d<dlib::rgb_pixel> img;
-								dlib::assign_image(img, dlib::cv_image<dlib::bgr_pixel>(prev_frame));
-								dlib::rectangle det = openCVRectToDlib(aux_rect);
-								dlib::full_object_detection shape = sp(img, det);
-                            for (int i = 0; i < shape.num_parts(); i++)
-                            {
-                                if (i >= 36 && i <= 41)
-                                {
-                                    left_eye.push_back(cv::Point2l(shape.part(i).x(), shape.part(i).y()));
-                                    cv::circle(prev_frame, cv::Point2l(shape.part(i).x(), shape.part(i).y()), 1 + static_cast<int>(0.0012 * rect.width), cv::Scalar(0, 255, 255), -1);
-                                }
-                                if (i >= 42 && i <= 47)
-                                {
-                                    right_eye.push_back(cv::Point2l(shape.part(i).x(), shape.part(i).y()));
-                                    cv::circle(prev_frame, cv::Point2l(shape.part(i).x(), shape.part(i).y()), 1 + static_cast<int>(0.0012 * rect.width), cv::Scalar(0, 255, 255), -1);
-                                }
-                                //48 - 54. 50 - 58. 52 - 56.
+								std::cout << "Head pose results: yaw, pitch, roll = "
+										  << headPoseDetector[ii].angle_y << ";"
+										  << headPoseDetector[ii].angle_p << ";"
+										  << headPoseDetector[ii].angle_r << std::endl;
+							}
+							cv::Point3f center(rect.x + rect.width / 2, rect.y + rect.height / 2, 0);
+							headPoseDetector.drawAxes(prev_frame, center, headPoseDetector[ii], 50);
+							pitch.push_front(headPoseDetector[ii].angle_p);
+							headbutt = headbuttDetection(&pitch);
 
-                                if (i == 48 || i == 54 || i == 50 || i == 58 || i == 52 || i == 56)
-                                {
-                                    mouth.push_back(cv::Point2l(shape.part(i).x(), shape.part(i).y()));
-                                    cv::circle(prev_frame, cv::Point2l(shape.part(i).x(), shape.part(i).y()), 1 + static_cast<int>(0.0012 * rect.width), cv::Scalar(0, 255, 255), -1);
-                                }
-                            }
-                            float ear_left = 0;
-                            float ear_right = 0;
-                            float ear = 0;
-                            ear_left = (distanceAtoB(left_eye[1], left_eye[5]) + distanceAtoB(left_eye[2], left_eye[4])) / (2 * distanceAtoB(left_eye[0], left_eye[3]));
-                            ear_right = (distanceAtoB(right_eye[1], right_eye[5]) + distanceAtoB(right_eye[2], right_eye[4])) / (2 * distanceAtoB(right_eye[0], right_eye[3]));
-                            ear = (ear_left + ear_right) / 2;
-                            ear_5.push_front(ear);
-                            float ear_avg = 0;
-                            for (auto &&i : ear_5)
-                            {
-                                ear_avg = ear_avg + i;
-                            }
-                            ear_avg = ear_avg / ear_5.size();
-                            if (ear_avg < EYE_AR_THRESH)
-                            {
-                                // Blink Logic
-                                vBlink = 1;
-                                if (firstBlink)
-                                {
-                                    timeBlink = 0;
-                                    firstBlink = false;
-                                }
-                                else
-                                {
-                                    timeBlink = timer["timeBlink"].getSmoothedDuration() - timeBlink;
-                                }
-                                timer.start("timeBlink");
-                                // End Blink Logic
+							int is_dist = isDistracted(headPoseDetector[ii].angle_y, headPoseDetector[ii].angle_p, headPoseDetector[ii].angle_r);
 
-                                blink_counter += 1;
-                                if (blink_counter >= 90)
-                                    eye_closed = true;
-                            }
-                            else
-                            {
-                                if (blink_counter >= EYE_AR_CONSEC_FRAMES)
-                                {
-                                    blinl_total += 1;
-                                    last_blink_counter = blink_counter;
-                                }
-                                blink_counter = 0;
+							// Alarm Label
+							int x_alarm = width - (x + 20) - 20;
+							int y_alarm = y_driver_i + y_driver + 10;
+							cv::rectangle(prev_frame, cv::Rect(x_alarm, y_alarm, x + 20, y + 100), cv::Scalar(0, 0, 0), -1);
+							cv::rectangle(prev_frame, cv::Rect(x_alarm, y_alarm, x + 20, y + 100), cv::Scalar(255, 255, 255), 2);
 
-                                // Blink Logic
-                                vBlink = 0;
-                                timeBlink = 0;
-                                firstBlink = true;
-                                // End Blink Logic
-                            }
+							cv::putText(prev_frame, "Alarms", cv::Point2f(x_truck_i, y_alarm + 20), cv::FONT_HERSHEY_SIMPLEX, 0.5, cv::Scalar(255, 255, 255), 2);
+							cv::putText(prev_frame, "Drowsiness | Distraction", cv::Point2f(x_truck_i, y_alarm + 40), cv::FONT_HERSHEY_SIMPLEX, 0.5, cv::Scalar(255, 255, 255), 1);
+							cv::putText(prev_frame, "Description", cv::Point2f(x_truck_i, y_alarm + y_vum + 75), cv::FONT_HERSHEY_SIMPLEX, 0.5, cv::Scalar(255, 255, 255), 1);
 
-                            cv::putText(prev_frame, "Blinks: " + std::to_string(blinl_total), cv::Point2f(x_truck_i, y_driver_i + 60), cv::FONT_HERSHEY_SIMPLEX, 0.5, cv::Scalar(255, 255, 255), 1);
+							// Thread: Drowsiness Alarm
+							std::thread thread_drowsiness(alarmDrowsiness, prev_frame, yawn_total, blinl_total, width, height, x_alarm, y_alarm, x_truck_i, headbutt);
+							std::thread thread_distraction(alarmDistraction, prev_frame, is_dist, y_alarm, x_truck_i, pid_da);
+							// Thread: Drowsiness Alarm
+							thread_drowsiness.join();
+							thread_distraction.join();
+						}
+						ii++;
+					}
 
-                            //Yawn detection
-                            float ear_mouth = (distanceAtoB(mouth[1], mouth[5]) + distanceAtoB(mouth[2], mouth[4])) / (2 * distanceAtoB(mouth[0], mouth[3]));
-                            ear_5_mouth.push_front(ear_mouth);
-                            float ear_avg_mouth = 0;
-                            for (auto &&i : ear_5_mouth)
-                            {
-                                ear_avg_mouth = ear_avg_mouth + i;
-                            }
-                            ear_avg_mouth = ear_avg_mouth / ear_5_mouth.size();
-                            if (ear_avg_mouth > MOUTH_EAR_THRESH)
-                            {
-                                yawn_counter += 1;
-                            }
-                            else
-                            {
-                                if (yawn_counter >= MOUTH_EAR_CONSEC_FRAMES)
-                                {
-                                    vYawn = 1;
-                                    yawn_total += 1;
-                                }
-                                yawn_counter = 0;
-                            }
-                            cv::putText(prev_frame, "Yawns: " + std::to_string(yawn_total), cv::Point2f(x_truck_i, y_driver_i + 80), cv::FONT_HERSHEY_SIMPLEX, 0.5, cv::Scalar(255, 255, 255), 1);
-                            }
+					// Truck Label
 
-                        cv::putText(prev_frame,
-                                    out.str(),
-                                    cv::Point2f(result.location.x, result.location.y - 15),
-                                    cv::FONT_HERSHEY_COMPLEX_SMALL,
-                                    0.8,
-                                    cv::Scalar(0, 0, 255));
+					cv::rectangle(prev_frame, cv::Rect(width - (x + 40), y_truck_i + 20, x + 20, y + 130), cv::Scalar(0, 0, 0), -1);
+					cv::rectangle(prev_frame, cv::Rect(width - (x + 40), y_truck_i + 20, x + 20, y + 130), cv::Scalar(255, 255, 255), 2);
 
-                        if (headPoseDetector.enabled() && ii < headPoseDetector.maxBatch)
-                        {
-                            if (FLAGS_r)
-                            {
-                                std::cout << "Head pose results: yaw, pitch, roll = "
-                                          << headPoseDetector[ii].angle_y << ";"
-                                          << headPoseDetector[ii].angle_p << ";"
-                                          << headPoseDetector[ii].angle_r << std::endl;
-                            }
-                            cv::Point3f center(rect.x + rect.width / 2, rect.y + rect.height / 2, 0);
-                            headPoseDetector.drawAxes(prev_frame, center, headPoseDetector[ii], 50);
-                            pitch.push_front(headPoseDetector[ii].angle_p);
-                            headbutt = headbuttDetection(&pitch);
+					cv::putText(prev_frame, "Truck Information", cv::Point2f(x_truck_i, y_truck_i + 40), cv::FONT_HERSHEY_SIMPLEX, 0.5, cv::Scalar(255, 255, 255), 2);
 
-                            int is_dist = isDistracted(headPoseDetector[ii].angle_y, headPoseDetector[ii].angle_p, headPoseDetector[ii].angle_r);
+					if (truck.getEngine())
+						cv::putText(prev_frame, "Engine: ON", cv::Point2f(x_truck_i, y_truck_i + 60), cv::FONT_HERSHEY_SIMPLEX, 0.3, cv::Scalar(0, 255, 0), 1.8);
+					else
+						cv::putText(prev_frame, "Engine: OFF", cv::Point2f(x_truck_i, y_truck_i + 60), cv::FONT_HERSHEY_SIMPLEX, 0.3, cv::Scalar(0, 0, 255), 1.8);
 
-                            // Alarm Label
-                            int x_alarm = width - (x + 20) - 20;
-                            int y_alarm = y_driver_i + y_driver + 10;
-                            cv::rectangle(prev_frame, cv::Rect(x_alarm, y_alarm, x + 20, y + 100), cv::Scalar(0, 0, 0), -1);
-                            cv::rectangle(prev_frame, cv::Rect(x_alarm, y_alarm, x + 20, y + 100), cv::Scalar(255, 255, 255), 2);
+					if (truck.getParkingBrake())
+						cv::putText(prev_frame, "GearStatus: Parking", cv::Point2f(x_truck_i, y_truck_i + 75), cv::FONT_HERSHEY_SIMPLEX, 0.3, cv::Scalar(0, 0, 255), 1.2);
+					else if (truck.getSpeed() < -0.03)
+						cv::putText(prev_frame, "GearStatus: Reverse", cv::Point2f(x_truck_i, y_truck_i + 75), cv::FONT_HERSHEY_SIMPLEX, 0.3, cv::Scalar(255, 255, 255), 1.2);
+					else if (truck.getSpeed() > 0.03)
+						cv::putText(prev_frame, "GearStatus: Driving", cv::Point2f(x_truck_i, y_truck_i + 75), cv::FONT_HERSHEY_SIMPLEX, 0.3, cv::Scalar(255, 255, 255), 1.2);
+					else
+						cv::putText(prev_frame, "GearStatus: Stopped", cv::Point2f(x_truck_i, y_truck_i + 75), cv::FONT_HERSHEY_SIMPLEX, 0.3, cv::Scalar(255, 255, 255), 1.2);
 
-                            cv::putText(prev_frame, "Alarms", cv::Point2f(x_truck_i, y_alarm + 20), cv::FONT_HERSHEY_SIMPLEX, 0.5, cv::Scalar(255, 255, 255), 2);
-                            cv::putText(prev_frame, "Drowsiness | Distraction", cv::Point2f(x_truck_i, y_alarm + 40), cv::FONT_HERSHEY_SIMPLEX, 0.5, cv::Scalar(255, 255, 255), 1);
-                            cv::putText(prev_frame, "Description", cv::Point2f(x_truck_i, y_alarm + y_vum + 75), cv::FONT_HERSHEY_SIMPLEX, 0.5, cv::Scalar(255, 255, 255), 1);
+					if (truck.getTrailer())
+						cv::putText(prev_frame, "Trailer: ON", cv::Point2f(x_truck_i, y_truck_i + 90), cv::FONT_HERSHEY_SIMPLEX, 0.3, cv::Scalar(0, 255, 0), 1.2);
+					else
+						cv::putText(prev_frame, "Trailer: OFF", cv::Point2f(x_truck_i, y_truck_i + 90), cv::FONT_HERSHEY_SIMPLEX, 0.3, cv::Scalar(0, 0, 255), 1.2);
 
-                            // Thread: Drowsiness Alarm
-                            std::thread thread_drowsiness(alarmDrowsiness, prev_frame, yawn_total, blinl_total, width, height, x_alarm, y_alarm, x_truck_i, headbutt);
-                            std::thread thread_distraction(alarmDistraction, prev_frame, is_dist, y_alarm, x_truck_i, pid_da);
-                            // Thread: Drowsiness Alarm
-                            thread_drowsiness.join();
-                            thread_distraction.join();
-                        }
-                        ii++;
-                    }
+					cv::putText(prev_frame, cv::format("Speed (Km/h): %3.2f", (truck.getSpeed())), cv::Point2f(x_truck_i, y_truck_i + 105), cv::FONT_HERSHEY_SIMPLEX, 0.3, cv::Scalar(255, 255, 255), 1.2);
+					cv::putText(prev_frame, "RPM: " + std::to_string(truck.getRpm()), cv::Point2f(x_truck_i, y_truck_i + 120), cv::FONT_HERSHEY_SIMPLEX, 0.3, cv::Scalar(255, 255, 255), 1.2);
+					cv::putText(prev_frame, "Gear: " + std::to_string(truck.getGear()), cv::Point2f(x_truck_i, y_truck_i + 135), cv::FONT_HERSHEY_SIMPLEX, 0.3, cv::Scalar(255, 255, 255), 1.2);
 
-                    // Truck Label
-                    
-                    cv::rectangle(prev_frame, cv::Rect(width - (x + 40), y_truck_i + 20, x + 20, y + 130), cv::Scalar(0, 0, 0), -1);
-                    cv::rectangle(prev_frame, cv::Rect(width - (x + 40), y_truck_i + 20, x + 20, y + 130), cv::Scalar(255, 255, 255), 2);
+					if (truck.getCruiseControl() > 0.03)
+						cv::putText(prev_frame, cv::format("Cruice (Km/h): %3.2f", truck.getCruiseControl() * 3.6), cv::Point2f(x_truck_i, y_truck_i + 150), cv::FONT_HERSHEY_SIMPLEX, 0.3, cv::Scalar(255, 255, 255), 1.2);
+					else
+						cv::putText(prev_frame, "Cruice: OFF", cv::Point2f(x_truck_i, y_truck_i + 150), cv::FONT_HERSHEY_SIMPLEX, 0.3, cv::Scalar(255, 255, 255), 1.2);
 
-                    cv::putText(prev_frame, "Truck Information", cv::Point2f(x_truck_i, y_truck_i + 40), cv::FONT_HERSHEY_SIMPLEX, 0.5, cv::Scalar(255, 255, 255), 2);
-                    
-                    if (truck.getEngine())
-                        cv::putText(prev_frame, "Engine: ON", cv::Point2f(x_truck_i, y_truck_i + 60), cv::FONT_HERSHEY_SIMPLEX, 0.3, cv::Scalar(0, 255, 0), 1.8);
-                    else
-                        cv::putText(prev_frame, "Engine: OFF", cv::Point2f(x_truck_i, y_truck_i + 60), cv::FONT_HERSHEY_SIMPLEX, 0.3, cv::Scalar(0, 0, 255), 1.8);
-                    
-                    if (truck.getParkingBrake())
-                        cv::putText(prev_frame, "GearStatus: Parking", cv::Point2f(x_truck_i, y_truck_i + 75), cv::FONT_HERSHEY_SIMPLEX, 0.3, cv::Scalar(0, 0, 255), 1.2);
-                    else if (truck.getSpeed() < -0.03)
-                        cv::putText(prev_frame, "GearStatus: Reverse", cv::Point2f(x_truck_i, y_truck_i + 75), cv::FONT_HERSHEY_SIMPLEX, 0.3, cv::Scalar(255, 255, 255), 1.2);
-                    else if (truck.getSpeed() > 0.03)
-                        cv::putText(prev_frame, "GearStatus: Driving", cv::Point2f(x_truck_i, y_truck_i + 75), cv::FONT_HERSHEY_SIMPLEX, 0.3, cv::Scalar(255, 255, 255), 1.2);
-                    else
-                        cv::putText(prev_frame, "GearStatus: Stopped", cv::Point2f(x_truck_i, y_truck_i + 75), cv::FONT_HERSHEY_SIMPLEX, 0.3, cv::Scalar(255, 255, 255), 1.2);
-                    
-                    if (truck.getTrailer())
-                        cv::putText(prev_frame, "Trailer: ON", cv::Point2f(x_truck_i, y_truck_i + 90), cv::FONT_HERSHEY_SIMPLEX, 0.3, cv::Scalar(0, 255, 0), 1.2);
-                    else
-                        cv::putText(prev_frame, "Trailer: OFF", cv::Point2f(x_truck_i, y_truck_i + 90), cv::FONT_HERSHEY_SIMPLEX, 0.3, cv::Scalar(0, 0, 255), 1.2);
-                    
-                    cv::putText(prev_frame, cv::format("Speed (Km/h): %3.2f", (truck.getSpeed())), cv::Point2f(x_truck_i, y_truck_i + 105), cv::FONT_HERSHEY_SIMPLEX, 0.3, cv::Scalar(255, 255, 255), 1.2);
-                    cv::putText(prev_frame, "RPM: " + std::to_string(truck.getRpm()), cv::Point2f(x_truck_i, y_truck_i + 120), cv::FONT_HERSHEY_SIMPLEX, 0.3, cv::Scalar(255, 255, 255), 1.2);
-                    cv::putText(prev_frame, "Gear: " + std::to_string(truck.getGear()), cv::Point2f(x_truck_i, y_truck_i + 135), cv::FONT_HERSHEY_SIMPLEX, 0.3, cv::Scalar(255, 255, 255), 1.2);
-                    
-                    if (truck.getCruiseControl() > 0.03)
-                        cv::putText(prev_frame, cv::format("Cruice (Km/h): %3.2f", truck.getCruiseControl() * 3.6), cv::Point2f(x_truck_i, y_truck_i + 150), cv::FONT_HERSHEY_SIMPLEX, 0.3, cv::Scalar(255, 255, 255), 1.2);
-                    else
-                        cv::putText(prev_frame, "Cruice: OFF", cv::Point2f(x_truck_i, y_truck_i + 150), cv::FONT_HERSHEY_SIMPLEX, 0.3, cv::Scalar(255, 255, 255), 1.2);
+					cv::putText(prev_frame, cv::format("Air Pressure (psi): %3.2f", truck.getAirPressure()), cv::Point2f(x_truck_i, y_truck_i + 165), cv::FONT_HERSHEY_SIMPLEX, 0.3, cv::Scalar(255, 255, 255), 1.2);
+					cv::putText(prev_frame, cv::format("Battery (V): %3.2f", truck.getBattery()), cv::Point2f(x_truck_i, y_truck_i + 180), cv::FONT_HERSHEY_SIMPLEX, 0.3, cv::Scalar(255, 255, 255), 1.2);
+					cv::putText(prev_frame, cv::format("Fuel (l): %3.2f", truck.getFuel()), cv::Point2f(x_truck_i, y_truck_i + 195), cv::FONT_HERSHEY_SIMPLEX, 0.3, cv::Scalar(255, 255, 255), 1.2);
+					cv::putText(prev_frame, cv::format("Fuel Average (l/km): %3.2f", truck.getFuelAverage()), cv::Point2f(x_truck_i, y_truck_i + 210), cv::FONT_HERSHEY_SIMPLEX, 0.3, cv::Scalar(255, 255, 255), 1.2);
+					cv::putText(prev_frame, cv::format("Cargo Mass (Kg): %3.2f", truck.getCargoMass()), cv::Point2f(x_truck_i, y_truck_i + 225), cv::FONT_HERSHEY_SIMPLEX, 0.3, cv::Scalar(255, 255, 255), 1.2);
+					cv::putText(prev_frame, cv::format("Wheel Wear: %3.2f", truck.getWearWheels() * 100), cv::Point2f(x_truck_i, y_truck_i + 240), cv::FONT_HERSHEY_SIMPLEX, 0.3, cv::Scalar(255, 255, 255), 1.2);
+					cv::putText(prev_frame, cv::format("Trailer Wear: %3.2f", truck.getWearChassis() * 100), cv::Point2f(x_truck_i, y_truck_i + 255), cv::FONT_HERSHEY_SIMPLEX, 0.3, cv::Scalar(255, 255, 255), 1.2);
+					cv::putText(prev_frame, cv::format("Engine Wear: %3.2f", truck.getWearEngine() * 100), cv::Point2f(x_truck_i, y_truck_i + 270), cv::FONT_HERSHEY_SIMPLEX, 0.3, cv::Scalar(255, 255, 255), 1.2);
+					cv::putText(prev_frame, cv::format("Transmission Wear: %3.2f", truck.getWearTransmission() * 100), cv::Point2f(x_truck_i, y_truck_i + 285), cv::FONT_HERSHEY_SIMPLEX, 0.3, cv::Scalar(255, 255, 255), 1.2);
 
-                    cv::putText(prev_frame, cv::format("Air Pressure (psi): %3.2f", truck.getAirPressure()), cv::Point2f(x_truck_i, y_truck_i + 165), cv::FONT_HERSHEY_SIMPLEX, 0.3, cv::Scalar(255, 255, 255), 1.2);
-                    cv::putText(prev_frame, cv::format("Battery (V): %3.2f", truck.getBattery()), cv::Point2f(x_truck_i, y_truck_i + 180), cv::FONT_HERSHEY_SIMPLEX, 0.3, cv::Scalar(255, 255, 255), 1.2);
-                    cv::putText(prev_frame, cv::format("Fuel (l): %3.2f", truck.getFuel()), cv::Point2f(x_truck_i, y_truck_i + 195), cv::FONT_HERSHEY_SIMPLEX, 0.3, cv::Scalar(255, 255, 255), 1.2);
-                    cv::putText(prev_frame, cv::format("Fuel Average (l/km): %3.2f", truck.getFuelAverage()), cv::Point2f(x_truck_i, y_truck_i + 210), cv::FONT_HERSHEY_SIMPLEX, 0.3, cv::Scalar(255, 255, 255), 1.2);
-                    cv::putText(prev_frame, cv::format("Cargo Mass (Kg): %3.2f", truck.getCargoMass()), cv::Point2f(x_truck_i, y_truck_i + 225), cv::FONT_HERSHEY_SIMPLEX, 0.3, cv::Scalar(255, 255, 255), 1.2);
-                    cv::putText(prev_frame, cv::format("Wheel Wear: %3.2f", truck.getWearWheels() * 100), cv::Point2f(x_truck_i, y_truck_i + 240), cv::FONT_HERSHEY_SIMPLEX, 0.3, cv::Scalar(255, 255, 255), 1.2);
-                    cv::putText(prev_frame, cv::format("Trailer Wear: %3.2f", truck.getWearChassis() * 100), cv::Point2f(x_truck_i, y_truck_i + 255), cv::FONT_HERSHEY_SIMPLEX, 0.3, cv::Scalar(255, 255, 255), 1.2);
-                    cv::putText(prev_frame, cv::format("Engine Wear: %3.2f", truck.getWearEngine() * 100), cv::Point2f(x_truck_i, y_truck_i + 270), cv::FONT_HERSHEY_SIMPLEX, 0.3, cv::Scalar(255, 255, 255), 1.2);
-                    cv::putText(prev_frame, cv::format("Transmission Wear: %3.2f", truck.getWearTransmission() * 100), cv::Point2f(x_truck_i, y_truck_i + 285), cv::FONT_HERSHEY_SIMPLEX, 0.3, cv::Scalar(255, 255, 255), 1.2);
-                    
-                    // End Thread 1: Driver Recognition
-                    thread_recognition.join();
+					// End Thread 1: Driver Recognition
+					thread_recognition.join();
+				}
 
-                }
-
-                // Sample of Results
-				if (!FLAGS_no_show) {
-                	cv::imshow("Detection results", prev_frame);
+				// Sample of Results
+				if (!FLAGS_no_show)
+				{
+					cv::imshow("Detection results", prev_frame);
 				}
 				// Save the ouput
-                if (FLAGS_o) {
-                    video_output.write(prev_frame);
-                }
-                timer.finish("visualization");
-            }
-
-            // Thread: Send Data to AWS
-            //std::thread senddata_thread(send2aws, topic, connection);
-
-            if (timer["send2aws"].getSmoothedDuration() > 500.0){
-                timer.start("send2aws");
-                picojson::value v;
-                picojson::value v1;
-                
-                v.set<picojson::object>(picojson::object());
-                v1.set<picojson::object>(picojson::object());
-
-                unsigned long milliseconds_time = std::chrono::duration_cast<std::chrono::milliseconds>(std::chrono::system_clock::now().time_since_epoch()).count();
-                v1.get<picojson::object>()["timestamp"] = picojson::value((double)milliseconds_time);
-                v1.get<picojson::object>()["name"] = picojson::value(driver_name);
-                v1.get<picojson::object>()["drowsiness"] = picojson::value(tDrowsiness);
-                v1.get<picojson::object>()["distraction"] = picojson::value(tDistraction);
-                double dangMap = 0; // This variable shows the highest value.
-                if (tDrowsiness >= tDistraction) dangMap = tDrowsiness;
-                    else dangMap = tDistraction;
-                v1.get<picojson::object>()["dangMap"] = picojson::value(dangMap);
-                //          v.get<picojson::object>()["driver"].set<picojson::array>(picojson::array());
-                //  	    v.get<picojson::object>()["driver"].get<picojson::array>().push_back(v1);
-                //  	    v.get<picojson::object>()["driver"] = v1;
-                
-                // Truck Information 
-                //v1.get<picojson::object>()["location"] = picojson::value(std::to_string(pos_lat)+","+std::to_string(pos_lon));
-		        v1.get<picojson::object>()["engine"] = picojson::value(truck.getEngine());
-                v1.get<picojson::object>()["trailer_connected"] = picojson::value(truck.getTrailer());
-                //v1.get<picojson::object>()["speed"] = picojson::value(std::to_string(100.0));
-                v1.get<picojson::object>()["rpm"] = picojson::value(std::to_string(truck.getRpm()));
-                v1.get<picojson::object>()["gear"] = picojson::value(std::to_string(truck.getGear()));
-                v1.get<picojson::object>()["cruise_control"] = picojson::value(truck.getCruiseControl());
-                v1.get<picojson::object>()["air_pressure"] = picojson::value(truck.getAirPressure());
-                v1.get<picojson::object>()["battery_voltage"] = picojson::value(truck.getBattery());
-                v1.get<picojson::object>()["fuel"] = picojson::value(truck.getFuel());
-                v1.get<picojson::object>()["fuel_average_consumption"] = picojson::value(truck.getFuelAverage());
-                v1.get<picojson::object>()["cargo_mass"] = picojson::value(truck.getCargoMass());
-                v1.get<picojson::object>()["wear_wheels"] = picojson::value(truck.getWearWheels() * 100);
-                v1.get<picojson::object>()["wear_chassis"] = picojson::value(truck.getWearChassis() * 100);
-                v1.get<picojson::object>()["wear_engine"] = picojson::value(truck.getWearEngine() * 100);
-                v1.get<picojson::object>()["wear_transmission"] = picojson::value(truck.getWearTransmission() * 100);
-
-
-                std::string input = picojson::value(v1).serialize();
-                Aws::Crt::ByteBuf payload = Aws::Crt::ByteBufNewCopy(Aws::Crt::DefaultAllocator(), (const uint8_t *)input.data(), input.length());
-                Aws::Crt::ByteBuf *payloadPtr = &payload;
-
-
-                auto onPublishComplete = [payloadPtr](Aws::Crt::Mqtt::MqttConnection &, uint16_t packetId, int errorCode) {
-                    aws_byte_buf_clean_up(payloadPtr);
-
-                    if (packetId)
-                    {
-                        fprintf(stdout, "Operation on packetId %d Succeeded\n", packetId);
-                    }
-                    else
-                    {
-                        fprintf(stdout, "Operation failed with error %s\n", aws_error_debug_str(errorCode));
-                    }
-                };
-				if(connectionInterrupted == false){
-					connection->Publish(topic.c_str(), AWS_MQTT_QOS_AT_MOST_ONCE, false, payload, onPublishComplete); 
+				if (FLAGS_o)
+				{
+					video_output.write(prev_frame);
 				}
- 
-            }
+				timer.finish("visualization");
+			}
 
-            // End of file (or a single frame file like an image). We just keep last frame displayed to let user check what was shown
-            if (isLastFrame)
-            {
-                timer.finish("total");
-                if (!FLAGS_no_wait)
-                {
-                    std::cout << "No more frames to process. Press any key to exit" << std::endl;
-                    cv::waitKey(0);
-                }
-                break;
-            }
-            else if (true && -1 != cv::waitKey(1)) // else if (!FLAGS_no_show && -1 != cv::waitKey(1))
-            {
-                timer.finish("total");
-                break;
-            }
+			if (timer["send2aws"].getSmoothedDuration() > 500.0)
+			{
+				timer.start("send2aws");
+				picojson::value v;
+				picojson::value v1;
 
-            prev_frame = frame;
-            frame = next_frame;
-            next_frame = cv::Mat();
+				v.set<picojson::object>(picojson::object());
+				v1.set<picojson::object>(picojson::object());
 
-            //senddata_thread.join();
+				unsigned long milliseconds_time = std::chrono::duration_cast<std::chrono::milliseconds>(std::chrono::system_clock::now().time_since_epoch()).count();
+				v1.get<picojson::object>()["timestamp"] = picojson::value((double)milliseconds_time);
+				v1.get<picojson::object>()["name"] = picojson::value(driver_name);
+				v1.get<picojson::object>()["drowsiness"] = picojson::value(tDrowsiness);
+				v1.get<picojson::object>()["distraction"] = picojson::value(tDistraction);
+				double dangMap = 0; // This variable shows the highest value.
+				if (tDrowsiness >= tDistraction)
+					dangMap = tDrowsiness;
+				else
+					dangMap = tDistraction;
+				v1.get<picojson::object>()["dangMap"] = picojson::value(dangMap);
+				//          v.get<picojson::object>()["driver"].set<picojson::array>(picojson::array());
+				//  	    v.get<picojson::object>()["driver"].get<picojson::array>().push_back(v1);
+				//  	    v.get<picojson::object>()["driver"] = v1;
 
-        }
+				// Truck Information
+				//v1.get<picojson::object>()["location"] = picojson::value(std::to_string(pos_lat)+","+std::to_string(pos_lon));
+				v1.get<picojson::object>()["engine"] = picojson::value(truck.getEngine());
+				v1.get<picojson::object>()["trailer_connected"] = picojson::value(truck.getTrailer());
+				//v1.get<picojson::object>()["speed"] = picojson::value(std::to_string(100.0));
+				v1.get<picojson::object>()["rpm"] = picojson::value(std::to_string(truck.getRpm()));
+				v1.get<picojson::object>()["gear"] = picojson::value(std::to_string(truck.getGear()));
+				v1.get<picojson::object>()["cruise_control"] = picojson::value(truck.getCruiseControl());
+				v1.get<picojson::object>()["air_pressure"] = picojson::value(truck.getAirPressure());
+				v1.get<picojson::object>()["battery_voltage"] = picojson::value(truck.getBattery());
+				v1.get<picojson::object>()["fuel"] = picojson::value(truck.getFuel());
+				v1.get<picojson::object>()["fuel_average_consumption"] = picojson::value(truck.getFuelAverage());
+				v1.get<picojson::object>()["cargo_mass"] = picojson::value(truck.getCargoMass());
+				v1.get<picojson::object>()["wear_wheels"] = picojson::value(truck.getWearWheels() * 100);
+				v1.get<picojson::object>()["wear_chassis"] = picojson::value(truck.getWearChassis() * 100);
+				v1.get<picojson::object>()["wear_engine"] = picojson::value(truck.getWearEngine() * 100);
+				v1.get<picojson::object>()["wear_transmission"] = picojson::value(truck.getWearTransmission() * 100);
 
-        connection->Unsubscribe(
-            topic.c_str(), [&](Aws::Crt::Mqtt::MqttConnection &, uint16_t, int) { conditionVariable.notify_one(); });
-        conditionVariable.wait(uniqueLock);
-        }
-        processing_finished = true;
-        //beep_thread.join();
-        slog::info << "Number of processed frames: " << framesCounter << slog::endl;
-        slog::info << "Total image throughput: " << framesCounter * (1000.F / timer["total"].getTotalDuration()) << " fps" << slog::endl;
+				std::string input = picojson::value(v1).serialize();
 
-        if (connection->Disconnect())
-        {
-            conditionVariable.wait(uniqueLock, [&]() { return connectionClosed; });
-        }
-        // -----------------------------------------------------------------------------------------------------
-    }
-    catch (const std::exception &error)
-    {
-        slog::err << error.what() << slog::endl;
-        return 1;
-    }
-    catch (...)
-    {
-        slog::err << "Unknown/internal exception happened." << slog::endl;
-        return 1;
-    }
+				if (connectionSucceeded)
+				{
+					Aws::Crt::ByteBuf payload = Aws::Crt::ByteBufNewCopy(Aws::Crt::DefaultAllocator(), (const uint8_t *)input.data(), input.length());
+					Aws::Crt::ByteBuf *payloadPtr = &payload;
 
-    slog::info << "Execution successful" << slog::endl;
+					auto onPublishComplete = [payloadPtr](Aws::Crt::Mqtt::MqttConnection &, uint16_t packetId, int errorCode) {
+						aws_byte_buf_clean_up(payloadPtr);
+
+						if (packetId)
+						{
+							fprintf(stdout, "Operation on packetId %d Succeeded\n", packetId);
+						}
+						else
+						{
+							fprintf(stdout, "Operation failed with error %s\n", aws_error_debug_str(errorCode));
+						}
+					};
+					if (connectionInterrupted == false)
+					{
+						connection->Publish(topic.c_str(), AWS_MQTT_QOS_AT_MOST_ONCE, false, payload, onPublishComplete);
+					}
+				}
+			}
+
+			// End of file (or a single frame file like an image). We just keep last frame displayed to let user check what was shown
+			if (isLastFrame)
+			{
+				timer.finish("total");
+				if (!FLAGS_no_wait)
+				{
+					std::cout << "No more frames to process. Press any key to exit" << std::endl;
+					cv::waitKey(0);
+				}
+				break;
+			}
+			else if (true && -1 != cv::waitKey(1)) // else if (!FLAGS_no_show && -1 != cv::waitKey(1))
+			{
+				timer.finish("total");
+				break;
+			}
+
+			prev_frame = frame;
+			frame = next_frame;
+			next_frame = cv::Mat();
+
+			//senddata_thread.join();
+		}
+
+		if (connectionSucceeded)
+		{
+			connection->Unsubscribe(
+				topic.c_str(), [&](Aws::Crt::Mqtt::MqttConnection &, uint16_t, int) { conditionVariable.notify_one(); });
+			conditionVariable.wait(uniqueLock);
+		}
+
+		processing_finished = true;
+		//beep_thread.join();
+		slog::info << "Number of processed frames: " << framesCounter << slog::endl;
+		slog::info << "Total image throughput: " << framesCounter * (1000.F / timer["total"].getTotalDuration()) << " fps" << slog::endl;
+
+		if (connectionSucceeded)
+		{
+			if (connection->Disconnect())
+			{
+				conditionVariable.wait(uniqueLock, [&]() { return connectionClosed; });
+			}
+		}
+		// -----------------------------------------------------------------------------------------------------
+	}
+	catch (const std::exception &error)
+	{
+		slog::err << error.what() << slog::endl;
+		return 1;
+	}
+	catch (...)
+	{
+		slog::err << "Unknown/internal exception happened." << slog::endl;
+		return 1;
+	}
+
+	slog::info << "Execution successful" << slog::endl;
 
 #ifdef SIMULATOR
-    std::terminate();
+	std::terminate();
 #endif
 
-    return 0;
+	return 0;
 }

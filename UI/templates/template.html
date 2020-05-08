@@ -93,7 +93,7 @@
               </li>
               <li class="nav-item">
                 <a href="{{ url_for('configuration') }}"
-                  class="nav-link {% if request.path == '/config' %}active{% endif %}">
+                  class="nav-link {% if request.path == '/configuration' %}active{% endif %}">
                   <i class="nav-icon far fa-circle text-success"></i>
                   <p>
                     Configuration
@@ -119,10 +119,10 @@
                 </a>
               </li>
               <li class="nav-item">
-                <a href="{{ url_for('certificates') }}"
-                  class="nav-link {% if request.path == '/certificates' %}active{% endif %}">
+                <a href="{{ url_for('cloud_configuration') }}"
+                  class="nav-link {% if request.path == '/cloud-configuration' %}active{% endif %}">
                   <i class="nav-icon far fa-circle text-success"></i>
-                  <p>Certificates</p>
+                  <p>Configuration</p>
                 </a>
               </li>
             </ul>
