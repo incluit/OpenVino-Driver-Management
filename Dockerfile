@@ -22,8 +22,6 @@ RUN apt-get install -y --no-install-recommends \
         libgflags-dev \
         libboost-dev \
         libboost-log-dev \
-        libsndfile1-dev \
-        libao-dev \
         cmake \
         libx11-dev \
         libssl-dev \

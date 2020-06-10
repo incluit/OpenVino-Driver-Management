@@ -490,20 +490,6 @@ void driver_recognition(cv::Mat prev_frame, std::vector<FaceDetection::Result> p
 	}
 }
 
-void beeping(Player *beep, bool *finished)
-{
-	while (!(*finished))
-	{
-		if (tDrowsiness <= 100)
-			beep->setGain(exp((float)((tDrowsiness - 100) / 10)));
-		if (tDrowsiness > 40)
-		{
-			if (!beep->isPlaying())
-				beep->play();
-		}
-	}
-}
-
 int headbuttDetection(boost::circular_buffer<double> *angle_p)
 {
 	boost::circular_buffer<double> &pitch = *angle_p;
@@ -727,8 +713,6 @@ int main(int argc, char *argv[])
 		bool headbutt = false;
 
 		bool processing_finished = false;
-		Player beep("beep.ogg");
-		//std::thread beep_thread(beeping, &beep, &processing_finished);
 
 		Aws::Crt::ApiHandle apiHandle;
 

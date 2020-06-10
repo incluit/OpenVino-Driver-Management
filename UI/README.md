@@ -23,7 +23,6 @@ First of all, it is mandatory to verify that the following prerequisites are bee
 * 64-bit Ubuntu 16.04 or 18.04
 * Git(git) installed
 * BOOST Library installed
-* “LibAO” and “libsndfile” installed
 * OpenVINO toolkit R2 Release installed
 * OpenVINO 2019 R3 or higher
 * OpenVINO Driver Management cloned and compiled.

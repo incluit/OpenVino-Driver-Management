@@ -1,7 +1,5 @@
 #pragma once
-#include <ao/ao.h>
 #include <signal.h>
-#include <sndfile.h>
 #include <string>
 
 #ifdef SIMULATOR
@@ -104,41 +102,4 @@ public:
 #ifdef SIMULATOR
         void ros_callback(const ets_msgs::msg::Truck::SharedPtr msg);
 #endif
-};
-
-class Player
-{
-private:
-	ao_device *device;
-	ao_sample_format format;
-	SF_INFO sfinfo;
-	int default_driver;
-	short *buffer;
-	SNDFILE * file;
-	SNDFILE * file_bkp;
-	std::string file_path;
-        float gain;
-	bool cancel_playback;
-	bool playing;
-	bool inited;
-public:
-	/* Member Initializer & Constructor*/
-	Player(std::string _file_path) : cancel_playback(false), inited(false), playing(false), file_path(_file_path), gain(1) {
-		this->init();
-	}
-	/* Get Function */
-	std::string	getFilePath() { return this->file_path; }
-	float		getGain() { return this->gain; }
-	bool		getCancelPlayback() { return this->cancel_playback; }
-	bool		isPlaying() { return this->playing; }
-	bool		isInited() { return this->inited; }
-
-	/* Set Function */
-	void setFilePath(std::string _file_path) { this->file_path = _file_path; }
-	void setGain(float _gain) { this->gain = _gain; }
-	void toggleCancelPlayback() { this->cancel_playback = !cancel_playback; }
-
-	void clean();
-	int init();
-	void play();
 };
