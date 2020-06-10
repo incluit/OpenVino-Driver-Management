@@ -9,11 +9,6 @@
 :toclevels: 6
 :toc-title: Table of Contents
 
-https://travis-ci.org/incluit/OpenVino-Driver-Behaviour#[image:https://travis-ci.org/incluit/OpenVino-Driver-Behaviour.svg?branch=master[Build
-Status]]
-https://sonarcloud.io/dashboard?id=incluit_OpenVino-Driver-Behaviour[image:https://sonarcloud.io/api/project_badges/measure?project=incluit_OpenVino-Driver-Behaviour&metric=alert_status[Sonarcloud
-Status]]
-
 toc::[]
 
 == Foreword
