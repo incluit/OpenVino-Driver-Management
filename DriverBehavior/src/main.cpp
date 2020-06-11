@@ -725,16 +725,17 @@ int main(int argc, char *argv[])
 
 		std::shared_ptr<Aws::Crt::Mqtt::MqttConnection> connection;
 
-		std::mutex mutex;
+		
 		std::condition_variable conditionVariable;
 		bool connectionClosed = false;
 		bool connectionCompleted = false;
 		bool connectionInterrupted = false;
-		std::unique_lock<std::mutex> uniqueLock(mutex);
 
 		if (!FLAGS_rootca.empty()){
 			out.str("");
 			out << FLAGS_rootca;
+
+			std::mutex mutex;
 
 			Aws::Crt::Io::EventLoopGroup eventLoopGroup(1);
 			if (!eventLoopGroup)
@@ -857,13 +858,14 @@ int main(int argc, char *argv[])
 				fprintf(stderr, "MQTT Connection failed with error %s\n", Aws::Crt::ErrorDebugString(connection->LastError()));
 				exit(-1);
 			}
-
+			fprintf(stdout, "flag1...\n");	
 			std::unique_lock<std::mutex> uniqueLock(mutex);
 			conditionVariable.wait(uniqueLock, [&]() { return connectionCompleted; });
-
+			fprintf(stdout, "flag2...\n");
 			if (connectionSucceeded)
 			{
 				connection->Subscribe(topic.c_str(), AWS_MQTT_QOS_AT_MOST_ONCE, onPublish, onSubAck);
+				fprintf(stdout, "flag3...\n");
 			}
 
 		}
@@ -875,7 +877,7 @@ int main(int argc, char *argv[])
 			picojson::value v1;
 			framesCounter++;
 			isLastFrame = !frameReadStatus;
-
+			fprintf(stdout, "Loop...\n");
 			timer.start("detection");
 			// Retrieve face detection results for previous frame.
 			faceDetector.wait();
@@ -904,7 +906,7 @@ int main(int argc, char *argv[])
 				faceDetector.submitRequest();
 			}
 			timer.finish("detection");
-
+			fprintf(stdout, "Loop1...\n");
 			timer.start("data preprocessing");
 			// Fill inputs of face analytics networks.
 			for (auto &&face : prev_detection_results)
@@ -946,7 +948,7 @@ int main(int argc, char *argv[])
 				headPoseDetector.wait();
 			}
 			timer.finish("face analytics wait");
-
+			fprintf(stdout, "Loop2...\n");
 			// Visualize results.
 			if (true) // if (!FLAGS_no_show)
 			{
@@ -1145,7 +1147,7 @@ int main(int argc, char *argv[])
 									cv::FONT_HERSHEY_COMPLEX_SMALL,
 									0.8,
 									cv::Scalar(0, 0, 255));
-
+						fprintf(stdout, "Loop3...\n");
 						if (headPoseDetector.enabled() && ii < headPoseDetector.maxBatch)
 						{
 							if (FLAGS_r)
@@ -1243,8 +1245,8 @@ int main(int argc, char *argv[])
 				}
 				timer.finish("visualization");
 			}
-
-			if (timer["send2aws"].getSmoothedDuration() > 500.0)
+			fprintf(stdout, "Loop4...\n");
+			if (timer["send2aws"].getSmoothedDuration() > 5000.0)
 			{
 				timer.start("send2aws");
 				picojson::value v;
@@ -1287,15 +1289,15 @@ int main(int argc, char *argv[])
 				v1.get<picojson::object>()["wear_transmission"] = picojson::value(truck.getWearTransmission() * 100);
 
 				std::string input = picojson::value(v1).serialize();
-				
+				fprintf(stdout, "Loop5...\n");
 				if (connectionSucceeded && !FLAGS_rootca.empty())
 				{
 					Aws::Crt::ByteBuf payload = Aws::Crt::ByteBufNewCopy(Aws::Crt::DefaultAllocator(), (const uint8_t *)input.data(), input.length());
 					Aws::Crt::ByteBuf *payloadPtr = &payload;
-
+					fprintf(stdout, "Loop6...\n");
 					auto onPublishComplete = [payloadPtr](Aws::Crt::Mqtt::MqttConnection &, uint16_t packetId, int errorCode) {
 						aws_byte_buf_clean_up(payloadPtr);
-
+						fprintf(stdout, "Loop7...\n");
 						if (packetId)
 						{
 							fprintf(stdout, "Operation on packetId %d Succeeded\n", packetId);
@@ -1307,6 +1309,8 @@ int main(int argc, char *argv[])
 					};
 					if (connectionInterrupted == false)
 					{
+						fprintf(stdout,"%s", topic.c_str());
+						fprintf(stdout, "Loop8...\n");
 						connection->Publish(topic.c_str(), AWS_MQTT_QOS_AT_MOST_ONCE, false, payload, onPublishComplete);
 					}
 				}
@@ -1335,12 +1339,12 @@ int main(int argc, char *argv[])
 
 			//senddata_thread.join();
 		}
-
+		//// end of main loop
 		if (connectionSucceeded  && !FLAGS_rootca.empty())
 		{
 			connection->Unsubscribe(
 				topic.c_str(), [&](Aws::Crt::Mqtt::MqttConnection &, uint16_t, int) { conditionVariable.notify_one(); });
-			conditionVariable.wait(uniqueLock);
+			//conditionVariable.wait(uniqueLock);
 		}
 
 		processing_finished = true;
@@ -1352,7 +1356,7 @@ int main(int argc, char *argv[])
 		{
 			if (connection->Disconnect())
 			{
-				conditionVariable.wait(uniqueLock, [&]() { return connectionClosed; });
+				//conditionVariable.wait(uniqueLock, [&]() { return connectionClosed; });
 			}
 		}
 		// -----------------------------------------------------------------------------------------------------

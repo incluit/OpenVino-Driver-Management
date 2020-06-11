@@ -37,6 +37,9 @@ COPY DriverBehavior/* app/
 WORKDIR /app/DriverBehavior
 RUN git clone --recursive https://github.com/awslabs/aws-crt-cpp.git
 RUN mkdir build
+WORKDIR /app/DriverBehavior/third-party
+RUN git clone https://github.com/davisking/dlib.git
+WORKDIR /app/DriverBehavior
 
 RUN chmod +x /app/DriverBehavior/scripts/setupenv.sh
 
