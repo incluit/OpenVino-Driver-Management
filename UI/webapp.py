@@ -148,7 +148,7 @@ def run_driver_management():
             command_driver_actions += " --no_show"
 
         # Send Data to AWS
-        if (json['send_to_aws']):
+        if (json['send_to_aws'] == "1"):
             command_driver_actions += " -e " + endpoint + " -r " + aws_folder + "root_ca.pem -c " + \
                 aws_folder + "certificate.pem.crt -k " + \
                 aws_folder + "private.pem.key -t actions/"
@@ -179,7 +179,7 @@ def run_driver_management():
         command_driver_behaviour += " -l /opt/intel/openvino/inference_engine/lib/intel64/libcpu_extension_sse4.so -c /opt/intel/openvino/inference_engine/lib/intel64/libclDNNPlugin.so "
         
         # Send Data to AWS
-        if (json['send_to_aws']):
+        if (json['send_to_aws'] == "1"):
             command_driver_behaviour += " -endpoint " + endpoint + " -rootca " + aws_folder + "root_ca.pem -cert " + \
                 aws_folder + "certificate.pem.crt -key " + \
                 aws_folder + "private.pem.key -topic drivers/ -clientid NEXCOM_device"
