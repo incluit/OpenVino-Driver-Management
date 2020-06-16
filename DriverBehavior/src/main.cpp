@@ -12,7 +12,6 @@
 #include <iterator>
 #include <map>
 #include <thread>
-#include <mutex>
 #include <math.h>
 #include <sys/types.h>
 #include <signal.h>
@@ -28,14 +27,15 @@
 #include "tracker.hpp"
 #include "classes.hpp"
 #include "picojson.hpp"
+#include "mqtt_aws.hpp"
 
 #include <ie_iextension.h>
 
 #include <opencv2/opencv.hpp>
 
 #include <aws/crt/Api.h>
+#include <aws/crt/Exports.h>
 #include <aws/crt/StlAllocator.h>
-#include <aws/iot/MqttClient.h>
 
 #include <dlib/image_processing/frontal_face_detector.h>
 #include <dlib/image_processing/render_face_detections.h>
@@ -224,7 +224,9 @@ std::string labelAlarm = "";
 cv::Mat face_save;
 bool firstPhoto = true;
 
-bool connectionSucceeded = false;
+Aws::Crt::ApiHandle apiHandle;
+MqttAws mqtt;
+std::shared_ptr<Aws::Crt::Mqtt::MqttConnection> connection;
 
 void alarmDrowsiness(cv::Mat prev_frame, int yawn_total, int blinl_total, int width, int height, int x_alarm, int y_alarm, int x_truck_i, bool headbutt)
 {
@@ -713,160 +715,12 @@ int main(int argc, char *argv[])
 		bool headbutt = false;
 
 		bool processing_finished = false;
-
-		Aws::Crt::ApiHandle apiHandle;
-
-		Aws::Crt::String endpoint(FLAGS_endpoint.c_str());
-		Aws::Crt::String certificatePath(FLAGS_cert.c_str());
-		Aws::Crt::String keyPath(FLAGS_key.c_str());
-		Aws::Crt::String caFile(FLAGS_rootca.c_str());
-		Aws::Crt::String topic(FLAGS_topic.c_str());
-		Aws::Crt::String clientId(FLAGS_clientid.c_str());
-
-		std::shared_ptr<Aws::Crt::Mqtt::MqttConnection> connection;
-
 		
-		std::condition_variable conditionVariable;
-		bool connectionClosed = false;
-		bool connectionCompleted = false;
-		bool connectionInterrupted = false;
-
+		
 		if (!FLAGS_rootca.empty()){
-			out.str("");
-			out << FLAGS_rootca;
-
-			std::mutex mutex;
-
-			Aws::Crt::Io::EventLoopGroup eventLoopGroup(1);
-			if (!eventLoopGroup)
-			{
-				fprintf(stderr, "Event Loop Group Creation failed with error %s\n", Aws::Crt::ErrorDebugString(eventLoopGroup.LastError()));
-				exit(-1);
-			}
-			Aws::Crt::Io::DefaultHostResolver defaultHostResolver(eventLoopGroup, 1, 5);
-			Aws::Crt::Io::ClientBootstrap bootstrap(eventLoopGroup, defaultHostResolver);
-			if (!bootstrap)
-			{
-				fprintf(stderr, "ClientBootstrap failed with error %s\n", Aws::Crt::ErrorDebugString(bootstrap.LastError()));
-				exit(-1);
-			}
-
-			auto clientConfig = Aws::Iot::MqttClientConnectionConfigBuilder(certificatePath.c_str(), keyPath.c_str())
-									.WithEndpoint(endpoint)
-									.WithCertificateAuthority(caFile.c_str())
-									.Build();
-
-			if (!clientConfig)
-			{
-				fprintf(stderr, "Client Configuration initialization failed with error %s\n", Aws::Crt::ErrorDebugString(Aws::Crt::LastError()));
-				exit(-1);
-			}
-
-			Aws::Iot::MqttClient mqttClient(bootstrap);
-			if (!mqttClient)
-			{
-				fprintf(stderr, "MQTT Client Creation failed with error %s\n", Aws::Crt::ErrorDebugString(mqttClient.LastError()));
-				exit(-1);
-			}
-
-			connection = mqttClient.NewConnection(clientConfig);
-			if (!*connection)
-			{
-				fprintf(stderr, "MQTT Connection Creation failed with error %s\n", Aws::Crt::ErrorDebugString(connection->LastError()));
-				exit(-1);
-			}
-
-			/*
-				* This will execute when an mqtt connect has completed or failed.
-				*/
-			auto onConnectionCompleted = [&](Aws::Crt::Mqtt::MqttConnection &, int errorCode, Aws::Crt::Mqtt::ReturnCode returnCode, bool) {
-				if (errorCode)
-				{
-					fprintf(stdout, "Connection failed with error %s\n", Aws::Crt::ErrorDebugString(errorCode));
-					std::lock_guard<std::mutex> lockGuard(mutex);
-					connectionSucceeded = false;
-				}
-				else
-				{
-					fprintf(stdout, "Connection completed with return code %d\n", returnCode);
-					connectionSucceeded = true;
-				}
-				{
-					std::lock_guard<std::mutex> lockGuard(mutex);
-					connectionCompleted = true;
-				}
-				conditionVariable.notify_one();
-			};
-
-			auto onInterrupted = [&](Aws::Crt::Mqtt::MqttConnection &, int error) {
-				fprintf(stdout, "Connection interrupted with error %s\n", Aws::Crt::ErrorDebugString(error));
-				connectionInterrupted = true;
-			};
-
-			auto onResumed = [&](Aws::Crt::Mqtt::MqttConnection &, Aws::Crt::Mqtt::ReturnCode, bool) {
-				fprintf(stdout, "Connection resumed\n");
-				connectionInterrupted = false;
-			};
-
-			/*
-				* Invoked when a disconnect message has completed.
-				*/
-			auto onDisconnect = [&](Aws::Crt::Mqtt::MqttConnection &conn) {
-				{
-					fprintf(stdout, "Disconnect completed\n");
-					std::lock_guard<std::mutex> lockGuard(mutex);
-					connectionClosed = true;
-				}
-				conditionVariable.notify_one();
-			};
-
-			connection->OnConnectionCompleted = std::move(onConnectionCompleted);
-			connection->OnDisconnect = std::move(onDisconnect);
-			connection->OnConnectionInterrupted = std::move(onInterrupted); //I should set a flag here to try to reconnect, probably
-			connection->OnConnectionResumed = std::move(onResumed);
-
-			auto onPublish = [&](Aws::Crt::Mqtt::MqttConnection &, const Aws::Crt::String &topic, const Aws::Crt::ByteBuf &byteBuf) {
-				fprintf(stdout, "Publish received on topic %s\n", topic.c_str());
-				fprintf(stdout, "\n Message:\n");
-				fwrite(byteBuf.buffer, 1, byteBuf.len, stdout);
-				fprintf(stdout, "\n");
-			};
-
-			/*
-				* Subscribe for incoming publish messages on topic.
-				*/
-			auto onSubAck = [&](Aws::Crt::Mqtt::MqttConnection &, uint16_t packetId, const Aws::Crt::String &topic, Aws::Crt::Mqtt::QOS, int errorCode) {
-				if (packetId)
-				{
-					fprintf(stdout, "Subscribe on topic %s on packetId %d Succeeded\n", topic.c_str(), packetId);
-				}
-				else
-				{
-					fprintf(stdout, "Subscribe failed with error %s\n", aws_error_debug_str(errorCode));
-				}
-				conditionVariable.notify_one();
-			};
-
-			/*
-				* Actually perform the connect dance.
-				* This will use default ping behavior of 1 hour and 3 second timeouts.
-				* If you want different behavior, those arguments go into slots 3 & 4.
-				*/
-			fprintf(stdout, "Connecting...\n");
-			if (!connection->Connect(clientId.c_str(), false, 20))
-			{
-				fprintf(stderr, "MQTT Connection failed with error %s\n", Aws::Crt::ErrorDebugString(connection->LastError()));
-				exit(-1);
-			}
-			std::unique_lock<std::mutex> uniqueLock(mutex);
-			conditionVariable.wait(uniqueLock, [&]() { return connectionCompleted; });
-			if (connectionSucceeded)
-			{
-				connection->Subscribe(topic.c_str(), AWS_MQTT_QOS_AT_MOST_ONCE, onPublish, onSubAck);
-			}
-
+			//AWS initialize
+			auto connection = mqtt.Initialize(FLAGS_endpoint.c_str(),FLAGS_cert.c_str(),FLAGS_key.c_str(),FLAGS_rootca.c_str(),FLAGS_topic.c_str(),FLAGS_clientid.c_str());
 		}
-		
 
 		while (true)
 		{
@@ -1141,7 +995,7 @@ int main(int argc, char *argv[])
 									cv::FONT_HERSHEY_COMPLEX_SMALL,
 									0.8,
 									cv::Scalar(0, 0, 255));
-						fprintf(stdout, "Loop3...\n");
+
 						if (headPoseDetector.enabled() && ii < headPoseDetector.maxBatch)
 						{
 							if (FLAGS_r)
@@ -1282,29 +1136,9 @@ int main(int argc, char *argv[])
 				v1.get<picojson::object>()["wear_transmission"] = picojson::value(truck.getWearTransmission() * 100);
 
 				std::string input = picojson::value(v1).serialize();
-				Aws::Crt::ByteBuf payload = Aws::Crt::ByteBufNewCopy(Aws::Crt::DefaultAllocator(), (const uint8_t *)input.data(), input.length());
-				Aws::Crt::ByteBuf *payloadPtr = &payload;
-
-				if (connectionSucceeded && !FLAGS_rootca.empty())
-				{
-					auto onPublishComplete = [payloadPtr](Aws::Crt::Mqtt::MqttConnection &, uint16_t packetId, int errorCode) {
-						aws_byte_buf_clean_up(payloadPtr);
-						fprintf(stdout, "Loop7...\n");
-						if (packetId)
-						{
-							fprintf(stdout, "Operation on packetId %d Succeeded\n", packetId);
-						}
-						else
-						{
-							fprintf(stdout, "Operation failed with error %s\n", aws_error_debug_str(errorCode));
-						}
-					};
-					if (connectionInterrupted == false)
-					{
-						fprintf(stdout,"%s", topic.c_str());
-						fprintf(stdout, "Loop8...\n");
-						connection->Publish(topic.c_str(), AWS_MQTT_QOS_AT_MOST_ONCE, false, payload, onPublishComplete);
-					}
+				if (!FLAGS_rootca.empty()){
+					/// Publish AWS
+					mqtt.publishMessage(input, FLAGS_topic.c_str(),connection);
 				}
 			}
 
@@ -1332,11 +1166,9 @@ int main(int argc, char *argv[])
 			//senddata_thread.join();
 		}
 		//// end of main loop
-		if (connectionSucceeded  && !FLAGS_rootca.empty())
-		{
-			connection->Unsubscribe(
-				topic.c_str(), [&](Aws::Crt::Mqtt::MqttConnection &, uint16_t, int) { conditionVariable.notify_one(); });
-			//conditionVariable.wait(uniqueLock);
+		if (!FLAGS_rootca.empty()){
+			/// AWS Unsubscribe
+			mqtt.unsubscribe(FLAGS_topic.c_str());
 		}
 
 		processing_finished = true;
@@ -1344,12 +1176,9 @@ int main(int argc, char *argv[])
 		slog::info << "Number of processed frames: " << framesCounter << slog::endl;
 		slog::info << "Total image throughput: " << framesCounter * (1000.F / timer["total"].getTotalDuration()) << " fps" << slog::endl;
 
-		if (connectionSucceeded  && !FLAGS_rootca.empty())
-		{
-			if (connection->Disconnect())
-			{
-				//conditionVariable.wait(uniqueLock, [&]() { return connectionClosed; });
-			}
+		if (!FLAGS_rootca.empty()){
+			///AWS Disconnect
+			mqtt.disconnect();
 		}
 		// -----------------------------------------------------------------------------------------------------
 	}
