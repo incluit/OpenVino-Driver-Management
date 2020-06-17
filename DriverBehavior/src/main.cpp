@@ -722,6 +722,7 @@ int main(int argc, char *argv[])
 		bool connectionInterrupted = false;
 
 		std::mutex mutex;
+		std::unique_lock<std::mutex> uniqueLock(mutex);
 
 		Aws::Crt::Io::EventLoopGroup eventLoopGroup(1);
 		if (!eventLoopGroup)
@@ -849,7 +850,6 @@ int main(int argc, char *argv[])
 				fprintf(stderr, "MQTT Connection failed with error %s\n", Aws::Crt::ErrorDebugString(connection->LastError()));
 				exit(-1);
 			}
-			std::unique_lock<std::mutex> uniqueLock(mutex);
 			conditionVariable.wait(uniqueLock, [&]() { return connectionCompleted; });
 			if (connectionSucceeded)
 			{
@@ -1324,7 +1324,7 @@ int main(int argc, char *argv[])
 			Aws::Crt::String topic(FLAGS_topic.c_str());
 			connection->Unsubscribe(
 				topic.c_str(), [&](Aws::Crt::Mqtt::MqttConnection &, uint16_t, int) { conditionVariable.notify_one(); });
-			//conditionVariable.wait(uniqueLock);
+			conditionVariable.wait(uniqueLock);
 		}
 
 		processing_finished = true;
@@ -1336,7 +1336,7 @@ int main(int argc, char *argv[])
 		{
 			if (connection->Disconnect())
 			{
-				//conditionVariable.wait(uniqueLock, [&]() { return connectionClosed; });
+				conditionVariable.wait(uniqueLock, [&]() { return connectionClosed; });
 			}
 		}
 		// -----------------------------------------------------------------------------------------------------
