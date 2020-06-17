@@ -1,5 +1,5 @@
 docker-build:
-	docker build -t openvino-incluit .
+	docker build -t openvino-incluit . --rm
 
 docker-run: 
 	xhost +
