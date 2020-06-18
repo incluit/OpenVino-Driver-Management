@@ -51,6 +51,8 @@ if( BUILD_SAMPLE_NAME AND NOT ${BUILD_SAMPLE_NAME} STREQUAL ${TARGET_NAME} )
     return()
 endif()
 
+find_package(ngraph)
+
 file (GLOB MAIN_SRC
         ${CMAKE_CURRENT_SOURCE_DIR}/src/*.cpp
         ${CMAKE_CURRENT_SOURCE_DIR}/src/*.c
@@ -99,7 +101,7 @@ add_subdirectory(aws-crt-cpp)
 link_directories(${CMAKE_CURRENT_SOURCE_DIR}/include)
 
 if(UNIX)
-	target_link_libraries( ${TARGET_NAME} ${LIB_DL} pthread ${OpenCV_LIBRARIES} ${Boost_LIBRARIES} dlib::dlib)
+	target_link_libraries( ${TARGET_NAME} ${LIB_DL} pthread ${OpenCV_LIBRARIES} ngraph::ngraph ${Boost_LIBRARIES} dlib::dlib)
 endif()
 
 add_custom_command(TARGET driver_behavior POST_BUILD

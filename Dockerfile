@@ -1,4 +1,4 @@
-FROM openvino/ubuntu18_dev:2019_R3.1
+FROM openvino/ubuntu18_dev:2020.3
 
 ADD . /app
 WORKDIR /app
@@ -84,7 +84,7 @@ COPY AWS/* app/
 WORKDIR /app/UI
 COPY entrypoint.sh /
 EXPOSE 5000
-RUN chmod +x /entrypoint.sh
-ENTRYPOINT ["/entrypoint.sh"]
+#RUN chmod +x /entrypoint.sh
+#ENTRYPOINT ["/entrypoint.sh"]
 
 CMD ["/bin/bash"]

@@ -23,11 +23,7 @@
 #include <gflags/gflags.h>
 #include <iostream>
 
-#ifdef _WIN32
-#include <os/windows/w_dirent.h>
-#else
 #include <dirent.h>
-#endif
 
 std::string GetEnv( const std::string & var ) {
      const char * val = std::getenv( var.c_str() );

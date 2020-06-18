@@ -23,6 +23,7 @@
 
 #include "customflags.hpp"
 #include "detectors.hpp"
+#include "detector.hpp"
 #include "cnn.hpp"
 #include "face_reid.hpp"
 #include "tracker.hpp"
@@ -511,6 +512,17 @@ int headbuttDetection(boost::circular_buffer<double> *angle_p)
 	return ret;
 }
 
+bool checkDynamicBatchSupport(const Core& ie, const std::string& device)  {
+    try  {
+        if (ie.GetConfig(device, CONFIG_KEY(DYN_BATCH_ENABLED)).as<std::string>() != PluginConfigParams::YES)
+            return false;
+    }
+    catch(const std::exception&)  {
+        return false;
+    }
+    return true;
+}
+
 int main(int argc, char *argv[])
 {
 
@@ -615,60 +627,74 @@ int main(int argc, char *argv[])
 			if (pluginsForDevices.find(deviceName) != pluginsForDevices.end())
 				continue;
 			slog::info << "Loading plugin " << deviceName << slog::endl;
-			Core core;
+			Core ie;
 			/** Load extensions for the CPU plugin **/
-			if ((deviceName.find("CPU") != std::string::npos))
-			{
-				if (!FLAGS_l.empty())
-				{
-					// CPU(MKLDNN) extensions are loaded as a shared library and passed as a pointer to base extension
-					auto extension_ptr = make_so_pointer<IExtension>(FLAGS_l);
-					core.AddExtension(extension_ptr, deviceName);
-					slog::info << "CPU Extension loaded: " << FLAGS_l << slog::endl;
-				}
-				//core.SetConfig({{ CONFIG_KEY(CPU_THROUGHPUT_STREAMS), std::to_string(12) }}, deviceName);
-				core.SetConfig({{CONFIG_KEY(CPU_THREADS_NUM), std::to_string(4)}}, deviceName);
-				core.SetConfig({{CONFIG_KEY(CPU_BIND_THREAD), "YES"}}, deviceName);
-			}
-			else if (!FLAGS_c.empty())
-				core.SetConfig({{PluginConfigParams::KEY_CONFIG_FILE, FLAGS_c}}, deviceName);
+			if (!FLAGS_l.empty()) {
+                    // CPU(MKLDNN) extensions are loaded as a shared library and passed as a pointer to base extension
+                    auto extension_ptr = make_so_pointer<IExtension>(FLAGS_l);
+                    ie.AddExtension(extension_ptr, "CPU");
+                    slog::info << "CPU Extension loaded: " << FLAGS_l << slog::endl;
+                
+            } else if (!FLAGS_c.empty()) {
+                // Load Extensions for other plugins not CPU
+                ie.SetConfig({{PluginConfigParams::KEY_CONFIG_FILE, FLAGS_c}}, "GPU");
+            }
 
-			core.SetConfig({{PluginConfigParams::KEY_DYN_BATCH_ENABLED, PluginConfigParams::YES}}, deviceName);
-			pluginsForDevices[deviceName] = core;
+			if (deviceName.find("CPU") != std::string::npos) {
+                ie.SetConfig({{PluginConfigParams::KEY_DYN_BATCH_ENABLED, PluginConfigParams::YES}}, "CPU");
+            } else if (deviceName.find("GPU") != std::string::npos) {
+                ie.SetConfig({{PluginConfigParams::KEY_DYN_BATCH_ENABLED, PluginConfigParams::YES}}, "GPU");
+            }
 		}
 
-		FaceDetection faceDetector(FLAGS_m, FLAGS_d, 1, false, FLAGS_async, FLAGS_t, FLAGS_r);
-		HeadPoseDetection headPoseDetector(FLAGS_m_hp, FLAGS_d_hp, FLAGS_n_hp, FLAGS_dyn_hp, FLAGS_async);
+		FaceDetection faceDetector(FLAGS_m, FLAGS_d, 1, false, FLAGS_async, FLAGS_t, FLAGS_r, 1.2, 1, 1); // Add last three arguments to Flags: bb_enlarge_coef, dx_coef, dy_coef
+		HeadPoseDetection headPoseDetector(FLAGS_m_hp, FLAGS_d_hp, FLAGS_n_hp, FLAGS_dyn_hp, FLAGS_async, FLAGS_r);
 		//	FacialLandmarksDetection facialLandmarksDetector(FLAGS_m_lm, FLAGS_d_lm, FLAGS_n_lm, FLAGS_dyn_lm, FLAGS_async);
 
+		Core ie;
 		auto fr_model_path = FLAGS_m_reid;
-		std::cout << fr_model_path << std::endl;
 		auto fr_weights_path = fileNameNoExt(FLAGS_m_reid) + ".bin";
 		auto lm_model_path = FLAGS_m_lm;
 		auto lm_weights_path = fileNameNoExt(FLAGS_m_lm) + ".bin";
 
-		CnnConfig reid_config(fr_model_path, fr_weights_path);
-		reid_config.max_batch_size = 16;
-		reid_config.enabled = /*face_config.enabled*/ true && !fr_model_path.empty() && !lm_model_path.empty();
-		reid_config.plugin = pluginsForDevices[FLAGS_d_reid];
+		std::cout << fr_model_path << std::endl;
+		CnnConfig reid_config(fr_model_path);
+		if (checkDynamicBatchSupport(ie, FLAGS_d_reid))
+			reid_config.max_batch_size = 16;
+		else
+			reid_config.max_batch_size = 1;
 		reid_config.deviceName = FLAGS_d_reid;
 		VectorCNN face_reid(reid_config);
 
 		// Load landmarks detector
-		CnnConfig landmarks_config(lm_model_path, lm_weights_path);
-		landmarks_config.max_batch_size = 16;
-		landmarks_config.enabled = /*face_config.enabled*/ true && reid_config.enabled && !lm_model_path.empty();
-		landmarks_config.plugin = pluginsForDevices[FLAGS_d_lm];
+		std::cout << lm_model_path << std::endl;
+		CnnConfig landmarks_config(lm_model_path);
+		if (checkDynamicBatchSupport(ie, FLAGS_d_lm))
+			landmarks_config.max_batch_size = 16;
+		else
+			landmarks_config.max_batch_size = 1;
 		landmarks_config.deviceName = FLAGS_d_lm;
 		VectorCNN landmarks_detector(landmarks_config);
 
+
+		slog::info << "Face regist. config" << slog::endl;
 		double t_reid = 0.4; // Cosine distance threshold between two vectors for face reidentification.
-		EmbeddingsGallery face_gallery(FLAGS_fg, t_reid, landmarks_detector, face_reid);
+		detection::DetectorConfig face_registration_det_config(FLAGS_m);
+		face_registration_det_config.deviceName = FLAGS_d;
+        face_registration_det_config.ie = ie;
+        face_registration_det_config.is_async = false;
+        face_registration_det_config.confidence_threshold = 0.7;
+        face_registration_det_config.increase_scale_x = 1.15;
+        face_registration_det_config.increase_scale_y = 1.15;
+
+		
+
+		EmbeddingsGallery face_gallery(FLAGS_fg, t_reid, 128, false, face_registration_det_config, landmarks_detector, face_reid);
 		// -----------------------------------------------------------------------------------------------------
 
 		// --------------------------- 2. Read IR models and load them to plugins ------------------------------
 		// Disable dynamic batching for face detector as long it processes one image at a time.
-		Load(faceDetector).into(pluginsForDevices[FLAGS_d], FLAGS_d, false);
+		Load(faceDetector).into(pluginsForDevices[FLAGS_d], FLAGS_d, true);
 		Load(headPoseDetector).into(pluginsForDevices[FLAGS_d_hp], FLAGS_d_hp, FLAGS_dyn_hp);
 		// -----------------------------------------------------------------------------------------------------
 
@@ -1141,7 +1167,7 @@ int main(int argc, char *argv[])
 										  << headPoseDetector[ii].angle_r << std::endl;
 							}
 							cv::Point3f center(rect.x + rect.width / 2, rect.y + rect.height / 2, 0);
-							headPoseDetector.drawAxes(prev_frame, center, headPoseDetector[ii], 50);
+							//headPoseDetector.drawAxes(prev_frame, center, headPoseDetector[ii], 50);
 							pitch.push_front(headPoseDetector[ii].angle_p);
 							headbutt = headbuttDetection(&pitch);
 
