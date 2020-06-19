@@ -140,9 +140,10 @@ struct HeadPoseDetection : BaseDetection {
 
     InferenceEngine::CNNNetwork read(const InferenceEngine::Core& ie) override;
     void submitRequest() override;
-
     void enqueue(const cv::Mat &face);
     Results operator[] (int idx) const;
+    void buildCameraMatrix(int cx, int cy, float focalLength);
+    void drawAxes(cv::Mat& frame, cv::Point3f cpoint, Results headPose, float scale);
 };
 
 struct EmotionsDetection : BaseDetection {

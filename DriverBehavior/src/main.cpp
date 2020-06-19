@@ -1167,7 +1167,7 @@ int main(int argc, char *argv[])
 										  << headPoseDetector[ii].angle_r << std::endl;
 							}
 							cv::Point3f center(rect.x + rect.width / 2, rect.y + rect.height / 2, 0);
-							//headPoseDetector.drawAxes(prev_frame, center, headPoseDetector[ii], 50);
+							headPoseDetector.drawAxes(prev_frame, center, headPoseDetector[ii], 50);
 							pitch.push_front(headPoseDetector[ii].angle_p);
 							headbutt = headbuttDetection(&pitch);
 

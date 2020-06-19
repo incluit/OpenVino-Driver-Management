@@ -84,7 +84,7 @@ COPY AWS/* app/
 WORKDIR /app/UI
 COPY entrypoint.sh /
 EXPOSE 5000
-#RUN chmod +x /entrypoint.sh
-#ENTRYPOINT ["/entrypoint.sh"]
+RUN chmod +x /entrypoint.sh
+ENTRYPOINT ["/entrypoint.sh"]
 
 CMD ["/bin/bash"]
