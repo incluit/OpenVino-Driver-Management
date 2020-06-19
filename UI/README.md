@@ -107,15 +107,22 @@ python3 webapp.py
 Usuario: intel
 Password: Intel2019_
 ```
-[![](https://github.com/incluit/OpenVino-Driver-Management/blob/master/UI/images/certificates1.jpg)](cert1)
-
-[![](https://github.com/incluit/OpenVino-Driver-Management/blob/master/UI/images/certificates2.jpg)](cert2)
-
-[![](https://github.com/incluit/OpenVino-Driver-Management/blob/master/UI/images/certificates3.jpg)](cert3)
-
-[![](https://github.com/incluit/OpenVino-Driver-Management/blob/master/UI/images/certificates4.jpg)](cert4)
 
 2. Go to the sidebar and select "Dashboard".
+
+**LOAD AWS CERTIFICATES**
+
+1. Go to the sidebar and select "Configuration"
+[![](https://github.com/incluit/OpenVino-Driver-Management/blob/master/UI/images/certificates1.jpg)](cert1)
+
+2. In the password box, write the password "incluit" and click "Edit"
+[![](https://github.com/incluit/OpenVino-Driver-Management/blob/master/UI/images/certificates2.jpg)](cert2)
+
+3. Then, browse all the certificates and select them (certificate.pem.crt, private.pem.key and AmazonRootCA1.pem)
+[![](https://github.com/incluit/OpenVino-Driver-Management/blob/master/UI/images/certificates3.jpg)](cert3)
+
+4. When you add all the certificates, click on "Upload certificates"
+[![](https://github.com/incluit/OpenVino-Driver-Management/blob/master/UI/images/certificates4.jpg)](cert4)
 
 
 ## TROUBLESHOOTING
