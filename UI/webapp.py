@@ -130,7 +130,7 @@ def run_driver_management():
         # Driver Actions Command
         command_driver_actions = "source " + ROS_SOURCE + " && source " + OPENVINO_SOURCE + \
             " && cd " + actionrecognition_folder + \
-            " && python3 action_recognition.py -m_en models/FP32/driver-action-recognition-adas-0002-encoder.xml -m_de models/FP32/driver-action-recognition-adas-0002-decoder.xml -lb driver_actions.txt -l /opt/intel/openvino/inference_engine/lib/intel64/libcpu_extension_sse4.so -d " + \
+            " && python3 action_recognition.py -m_en models/FP32/driver-action-recognition-adas-0002-encoder.xml -m_de models/FP32/driver-action-recognition-adas-0002-decoder.xml -lb driver_actions.txt -d " + \
             json['target_actions']
 
         if (json['camera_actions'] == "0" and json['file_actions'] != ""):
@@ -174,9 +174,6 @@ def run_driver_management():
                     command_driver_behaviour += " -m $face216"
                 else:
                     command_driver_behaviour += " -m $face232"
-
-        # lib CPU extension
-        command_driver_behaviour += " -l /opt/intel/openvino/inference_engine/lib/intel64/libcpu_extension_sse4.so -c /opt/intel/openvino/inference_engine/lib/intel64/libclDNNPlugin.so "
         
         # Send Data to AWS
         if (json['send_to_aws'] == "1"):

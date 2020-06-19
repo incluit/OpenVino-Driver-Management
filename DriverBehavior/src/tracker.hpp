@@ -1,4 +1,4 @@
-// Copyright (C) 2018 Intel Corporation
+// Copyright (C) 2018-2019 Intel Corporation
 // SPDX-License-Identifier: Apache-2.0
 //
 
@@ -22,12 +22,12 @@ struct TrackedObject {
     int label;  // either id of a label, or UNKNOWN_LABEL_IDX
     static const int UNKNOWN_LABEL_IDX;  // the value (-1) for unknown label
 
-    int frame_idx;      ///< Frame index where object was detected (-1 if N/A).
+    size_t frame_idx;      ///< Frame index where object was detected (-1 if N/A).
 
     TrackedObject(const cv::Rect &rect = cv::Rect(), float conf = -1.0f,
                   int label = -1, int object_id = -1)
         : rect(rect),  confidence(conf),
-          label(label), object_id(object_id),
+          object_id(object_id), label(label),
           frame_idx(-1) {}
 };
 
@@ -40,7 +40,10 @@ using TrackedObjects = std::vector<TrackedObject>;
 ///
 class KuhnMunkres {
 public:
-    KuhnMunkres();
+    ///
+    /// \brief Initializes the class for assignment problem solving.
+    /// \param[in] greedy If a faster greedy matching algorithm should be used.
+    explicit KuhnMunkres(bool greedy = false);
 
     ///
     /// \brief Solves the assignment problem for given dissimilarity matrix.
@@ -88,7 +91,8 @@ struct TrackerParams {
     /// restricted by this parameter. If it is negative or zero, the max number of
     /// objects in track is not restricted.
 
-    int averaging_window_size;  ///< The number of objects in track for averaging predictions.
+    int averaging_window_size_for_rects;  ///< The number of objects in track for averaging rects of predictions.
+    int averaging_window_size_for_labels;  ///< The number of objects in track for averaging labels of predictions.
 
     std::string objects_type;  ///< The type of boxes which will be grabbed from
     /// detector. Boxes with other types are ignored.
@@ -179,7 +183,6 @@ public:
     explicit Tracker(const TrackerParams &params = TrackerParams())
         : params_(params),
           tracks_counter_(0),
-          valid_tracks_counter_(0),
           frame_size_() {}
 
     ///
@@ -208,12 +211,6 @@ public:
     /// \brief Reset the pipeline.
     ///
     void Reset();
-
-    ///
-    /// \brief Returns number of counted tracks.
-    /// \return a number of counted tracks.
-    ///
-    size_t Count() const;
 
     ///
     /// \brief Returns recently detected objects.
@@ -274,8 +271,6 @@ public:
     void DropForgottenTracks();
 
 private:
-    void DropForgottenTrack(size_t track_id);
-
     const std::set<size_t> &active_track_ids() const { return active_track_ids_; }
 
     float ShapeAffinity(const cv::Rect &trk, const cv::Rect &det);
@@ -331,11 +326,8 @@ private:
     // Number of all current tracks.
     size_t tracks_counter_;
 
-    // Number of dropped valid tracks.
-    size_t valid_tracks_counter_;
-
     cv::Size frame_size_;
 };
 
-int LabelWithMaxFrequencyInTrack(const Track &track);
+int LabelWithMaxFrequencyInTrack(const Track &track, int window_size);
 std::vector<Track> UpdateTrackLabelsToBestAndFilterOutUnknowns(const std::vector<Track>& tracks);
