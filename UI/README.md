@@ -107,7 +107,13 @@ python3 webapp.py
 Usuario: intel
 Password: Intel2019_
 ```
-[![](https://github.com/incluit/OpenVino-Driver-Management/blob/master/UI/images/certificates1.jpg)](asd)
+[![](https://github.com/incluit/OpenVino-Driver-Management/blob/master/UI/images/certificates1.jpg)](cert1)
+
+[![](https://github.com/incluit/OpenVino-Driver-Management/blob/master/UI/images/certificates2.jpg)](cert2)
+
+[![](https://github.com/incluit/OpenVino-Driver-Management/blob/master/UI/images/certificates3.jpg)](cert3)
+
+[![](https://github.com/incluit/OpenVino-Driver-Management/blob/master/UI/images/certificates4.jpg)](cert4)
 
 2. Go to the sidebar and select "Dashboard".
 
