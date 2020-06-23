@@ -74,14 +74,19 @@ cd OpenVino-Driver-Management
 make docker-build
 ----
 
-**4.** Run the  docker:
+**4.** Configure the display output with the following command:
+[source,bash]
+----
+xhost +
+----
 
+**5.** Run the  docker:
 [source,bash]
 ----
 make docker-run
 ----
 
-**5.** AWS:
+**6.** AWS:
 
 Add the certificates of AWS in the UI
 
