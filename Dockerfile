@@ -58,7 +58,7 @@ RUN apt update && apt install -y --no-install-recommends\
         ros-crystal-rosbag2-test-common \
         ros-crystal-rosbag2-storage-default-plugins \
         ros-crystal-rosbag2-storage
-        
+
 RUN apt-get install -y --no-install-recommends \
         ros-crystal-sqlite3-vendor \
         ros-crystal-ros2bag*

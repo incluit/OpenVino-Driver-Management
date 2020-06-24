@@ -512,15 +512,18 @@ int headbuttDetection(boost::circular_buffer<double> *angle_p)
 	return ret;
 }
 
-bool checkDynamicBatchSupport(const Core& ie, const std::string& device)  {
-    try  {
-        if (ie.GetConfig(device, CONFIG_KEY(DYN_BATCH_ENABLED)).as<std::string>() != PluginConfigParams::YES)
-            return false;
-    }
-    catch(const std::exception&)  {
-        return false;
-    }
-    return true;
+bool checkDynamicBatchSupport(const Core &ie, const std::string &device)
+{
+	try
+	{
+		if (ie.GetConfig(device, CONFIG_KEY(DYN_BATCH_ENABLED)).as<std::string>() != PluginConfigParams::YES)
+			return false;
+	}
+	catch (const std::exception &)
+	{
+		return false;
+	}
+	return true;
 }
 
 int main(int argc, char *argv[])
@@ -629,22 +632,27 @@ int main(int argc, char *argv[])
 			slog::info << "Loading plugin " << deviceName << slog::endl;
 			Core ie;
 			/** Load extensions for the CPU plugin **/
-			if (!FLAGS_l.empty()) {
-                    // CPU(MKLDNN) extensions are loaded as a shared library and passed as a pointer to base extension
-                    auto extension_ptr = make_so_pointer<IExtension>(FLAGS_l);
-                    ie.AddExtension(extension_ptr, "CPU");
-                    slog::info << "CPU Extension loaded: " << FLAGS_l << slog::endl;
-                
-            } else if (!FLAGS_c.empty()) {
-                // Load Extensions for other plugins not CPU
-                ie.SetConfig({{PluginConfigParams::KEY_CONFIG_FILE, FLAGS_c}}, "GPU");
-            }
+			if (!FLAGS_l.empty())
+			{
+				// CPU(MKLDNN) extensions are loaded as a shared library and passed as a pointer to base extension
+				auto extension_ptr = make_so_pointer<IExtension>(FLAGS_l);
+				ie.AddExtension(extension_ptr, "CPU");
+				slog::info << "CPU Extension loaded: " << FLAGS_l << slog::endl;
+			}
+			else if (!FLAGS_c.empty())
+			{
+				// Load Extensions for other plugins not CPU
+				ie.SetConfig({{PluginConfigParams::KEY_CONFIG_FILE, FLAGS_c}}, "GPU");
+			}
 
-			if (deviceName.find("CPU") != std::string::npos) {
-                ie.SetConfig({{PluginConfigParams::KEY_DYN_BATCH_ENABLED, PluginConfigParams::YES}}, "CPU");
-            } else if (deviceName.find("GPU") != std::string::npos) {
-                ie.SetConfig({{PluginConfigParams::KEY_DYN_BATCH_ENABLED, PluginConfigParams::YES}}, "GPU");
-            }
+			if (deviceName.find("CPU") != std::string::npos)
+			{
+				ie.SetConfig({{PluginConfigParams::KEY_DYN_BATCH_ENABLED, PluginConfigParams::YES}}, "CPU");
+			}
+			else if (deviceName.find("GPU") != std::string::npos)
+			{
+				ie.SetConfig({{PluginConfigParams::KEY_DYN_BATCH_ENABLED, PluginConfigParams::YES}}, "GPU");
+			}
 		}
 
 		FaceDetection faceDetector(FLAGS_m, FLAGS_d, 1, false, FLAGS_async, FLAGS_t, FLAGS_r, 1.2, 1, 1); // Add last three arguments to Flags: bb_enlarge_coef, dx_coef, dy_coef
@@ -676,18 +684,15 @@ int main(int argc, char *argv[])
 		landmarks_config.deviceName = FLAGS_d_lm;
 		VectorCNN landmarks_detector(landmarks_config);
 
-
 		slog::info << "Face regist. config" << slog::endl;
 		double t_reid = 0.4; // Cosine distance threshold between two vectors for face reidentification.
 		detection::DetectorConfig face_registration_det_config(FLAGS_m);
 		face_registration_det_config.deviceName = FLAGS_d;
-        face_registration_det_config.ie = ie;
-        face_registration_det_config.is_async = false;
-        face_registration_det_config.confidence_threshold = 0.7;
-        face_registration_det_config.increase_scale_x = 1.15;
-        face_registration_det_config.increase_scale_y = 1.15;
-
-		
+		face_registration_det_config.ie = ie;
+		face_registration_det_config.is_async = false;
+		face_registration_det_config.confidence_threshold = 0.7;
+		face_registration_det_config.increase_scale_x = 1.15;
+		face_registration_det_config.increase_scale_y = 1.15;
 
 		EmbeddingsGallery face_gallery(FLAGS_fg, t_reid, 128, false, face_registration_det_config, landmarks_detector, face_reid);
 		// -----------------------------------------------------------------------------------------------------
@@ -769,7 +774,8 @@ int main(int argc, char *argv[])
 			fprintf(stderr, "MQTT Client Creation failed with error %s\n", Aws::Crt::ErrorDebugString(mqttClient.LastError()));
 			exit(-1);
 		}
-		if (!FLAGS_rootca.empty()){
+		if (!FLAGS_rootca.empty())
+		{
 
 			Aws::Crt::String endpoint(FLAGS_endpoint.c_str());
 			Aws::Crt::String certificatePath(FLAGS_cert.c_str());
@@ -840,7 +846,7 @@ int main(int argc, char *argv[])
 			connection->OnDisconnect = std::move(onDisconnect);
 			connection->OnConnectionInterrupted = std::move(onInterrupted); //I should set a flag here to try to reconnect, probably
 			connection->OnConnectionResumed = std::move(onResumed);
-		
+
 			/*
 			* This will execute when an mqtt connect has completed or failed.
 			*/
@@ -881,9 +887,8 @@ int main(int argc, char *argv[])
 			{
 				connection->Subscribe(topic.c_str(), AWS_MQTT_QOS_AT_MOST_ONCE, onPublish, onSubAck);
 			}
-
 		}
-		
+
 		while (true)
 		{
 			picojson::value v;
@@ -1157,6 +1162,9 @@ int main(int argc, char *argv[])
 									cv::FONT_HERSHEY_COMPLEX_SMALL,
 									0.8,
 									cv::Scalar(0, 0, 255));
+
+						int is_dist = 0;
+
 						if (headPoseDetector.enabled() && ii < headPoseDetector.maxBatch)
 						{
 							if (FLAGS_r)
@@ -1171,25 +1179,26 @@ int main(int argc, char *argv[])
 							pitch.push_front(headPoseDetector[ii].angle_p);
 							headbutt = headbuttDetection(&pitch);
 
-							int is_dist = isDistracted(headPoseDetector[ii].angle_y, headPoseDetector[ii].angle_p, headPoseDetector[ii].angle_r);
-
-							// Alarm Label
-							int x_alarm = width - (x + 20) - 20;
-							int y_alarm = y_driver_i + y_driver + 10;
-							cv::rectangle(prev_frame, cv::Rect(x_alarm, y_alarm, x + 20, y + 100), cv::Scalar(0, 0, 0), -1);
-							cv::rectangle(prev_frame, cv::Rect(x_alarm, y_alarm, x + 20, y + 100), cv::Scalar(255, 255, 255), 2);
-
-							cv::putText(prev_frame, "Alarms", cv::Point2f(x_truck_i, y_alarm + 20), cv::FONT_HERSHEY_SIMPLEX, 0.5, cv::Scalar(255, 255, 255), 2);
-							cv::putText(prev_frame, "Drowsiness | Distraction", cv::Point2f(x_truck_i, y_alarm + 40), cv::FONT_HERSHEY_SIMPLEX, 0.5, cv::Scalar(255, 255, 255), 1);
-							cv::putText(prev_frame, "Description", cv::Point2f(x_truck_i, y_alarm + y_vum + 75), cv::FONT_HERSHEY_SIMPLEX, 0.5, cv::Scalar(255, 255, 255), 1);
-
-							// Thread: Drowsiness Alarm
-							std::thread thread_drowsiness(alarmDrowsiness, prev_frame, yawn_total, blinl_total, width, height, x_alarm, y_alarm, x_truck_i, headbutt);
-							std::thread thread_distraction(alarmDistraction, prev_frame, is_dist, y_alarm, x_truck_i, pid_da);
-							// Thread: Drowsiness Alarm
-							thread_drowsiness.join();
-							thread_distraction.join();
+							is_dist = isDistracted(headPoseDetector[ii].angle_y, headPoseDetector[ii].angle_p, headPoseDetector[ii].angle_r);
 						}
+
+						// Alarm Label
+						int x_alarm = width - (x + 20) - 20;
+						int y_alarm = y_driver_i + y_driver + 10;
+						cv::rectangle(prev_frame, cv::Rect(x_alarm, y_alarm, x + 20, y + 100), cv::Scalar(0, 0, 0), -1);
+						cv::rectangle(prev_frame, cv::Rect(x_alarm, y_alarm, x + 20, y + 100), cv::Scalar(255, 255, 255), 2);
+
+						cv::putText(prev_frame, "Alarms", cv::Point2f(x_truck_i, y_alarm + 20), cv::FONT_HERSHEY_SIMPLEX, 0.5, cv::Scalar(255, 255, 255), 2);
+						cv::putText(prev_frame, "Drowsiness | Distraction", cv::Point2f(x_truck_i, y_alarm + 40), cv::FONT_HERSHEY_SIMPLEX, 0.5, cv::Scalar(255, 255, 255), 1);
+						cv::putText(prev_frame, "Description", cv::Point2f(x_truck_i, y_alarm + y_vum + 75), cv::FONT_HERSHEY_SIMPLEX, 0.5, cv::Scalar(255, 255, 255), 1);
+
+						// Thread: Drowsiness Alarm
+						std::thread thread_drowsiness(alarmDrowsiness, prev_frame, yawn_total, blinl_total, width, height, x_alarm, y_alarm, x_truck_i, headbutt);
+						std::thread thread_distraction(alarmDistraction, prev_frame, is_dist, y_alarm, x_truck_i, pid_da);
+						// Thread: Drowsiness Alarm
+						thread_drowsiness.join();
+						thread_distraction.join();
+
 						ii++;
 					}
 
@@ -1301,7 +1310,7 @@ int main(int argc, char *argv[])
 				Aws::Crt::ByteBuf *payloadPtr = &payload;
 
 				if (connectionSucceeded && !FLAGS_rootca.empty())
-				{	
+				{
 					Aws::Crt::String topic(FLAGS_topic.c_str());
 					auto onPublishComplete = [payloadPtr](Aws::Crt::Mqtt::MqttConnection &, uint16_t packetId, int errorCode) {
 						aws_byte_buf_clean_up(payloadPtr);
@@ -1345,7 +1354,7 @@ int main(int argc, char *argv[])
 			//senddata_thread.join();
 		}
 		//// end of main loop
-		if (connectionSucceeded  && !FLAGS_rootca.empty())
+		if (connectionSucceeded && !FLAGS_rootca.empty())
 		{
 			Aws::Crt::String topic(FLAGS_topic.c_str());
 			connection->Unsubscribe(
@@ -1358,7 +1367,7 @@ int main(int argc, char *argv[])
 		slog::info << "Number of processed frames: " << framesCounter << slog::endl;
 		slog::info << "Total image throughput: " << framesCounter * (1000.F / timer["total"].getTotalDuration()) << " fps" << slog::endl;
 
-		if (connectionSucceeded  && !FLAGS_rootca.empty())
+		if (connectionSucceeded && !FLAGS_rootca.empty())
 		{
 			if (connection->Disconnect())
 			{
