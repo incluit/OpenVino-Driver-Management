@@ -530,6 +530,7 @@ int main(int argc, char *argv[])
 {
 
 	rclcpp::init(argc, argv);
+	
 	std::thread truck_data(ros_client, &truck);
 	fSim = true;
 

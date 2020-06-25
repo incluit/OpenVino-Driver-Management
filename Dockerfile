@@ -33,14 +33,14 @@ RUN apt-get install -y --no-install-recommends \
 
 RUN pip3 install --upgrade pip setuptools wheel Flask==1.0.2 AWSIoTPythonSDK
 
-COPY DriverBehavior/* app/
 WORKDIR /app/DriverBehavior
 RUN git clone --recursive https://github.com/awslabs/aws-crt-cpp.git
 RUN mkdir build
+
 WORKDIR /app/DriverBehavior/third-party
 RUN git clone https://github.com/davisking/dlib.git
-WORKDIR /app/DriverBehavior
 
+WORKDIR /app/DriverBehavior
 RUN chmod +x /app/DriverBehavior/scripts/setupenv.sh
 
 # Ros2
@@ -65,6 +65,7 @@ RUN apt-get install -y --no-install-recommends \
 
 # ETS-ROS2
 RUN git clone https://github.com/HernanG234/ets_ros2/
+
 WORKDIR /app/DriverBehavior/ets_ros2
 RUN /bin/bash -c 'source /opt/intel/openvino/bin/setupvars.sh && source /opt/ros/crystal/setup.bash && colcon build --symlink-instal --parallel-workers 1 --cmake-args -DSIMULATOR=ON -DBUILD_DEPS=ON'
 
@@ -72,19 +73,10 @@ WORKDIR /app/DriverBehavior/build
 RUN /bin/bash -c 'source /opt/ros/crystal/setup.bash && source /app/DriverBehavior/ets_ros2/install/setup.bash && source /opt/intel/openvino/bin/setupvars.sh && source /app/DriverBehavior/scripts/setupenv.sh && cmake -DCMAKE_BUILD_TYPE=Release -DSIMULATOR=ON -DBUILD_DEPS=ON ../ && make'
 RUN /bin/bash -c 'source /opt/ros/crystal/setup.bash && source /app/DriverBehavior/ets_ros2/install/setup.bash && source /opt/intel/openvino/bin/setupvars.sh && source /app/DriverBehavior/scripts/download_models.sh'
 
-
-COPY ActionRecognition/* app/
 WORKDIR /app/ActionRecognition
 RUN /bin/bash -c 'source /opt/intel/openvino/bin/setupvars.sh && source /app/ActionRecognition/scripts/download_models.sh'
 
 ENV LC_ALL=en_US.utf8
 
-COPY UI/* app/
-COPY AWS/* app/
 WORKDIR /app/UI
-COPY entrypoint.sh /
-EXPOSE 5000
-RUN chmod +x /entrypoint.sh
-ENTRYPOINT ["/entrypoint.sh"]
-
 CMD ["/bin/bash"]

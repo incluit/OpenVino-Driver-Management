@@ -80,7 +80,13 @@ make docker-build
 make docker-run
 ----
 
-**5.** AWS:
+**5.** Inside the docker run:
+[source,bash]
+----
+make run
+----
+
+**6.** AWS:
 
 Add the certificates of AWS in the UI
 

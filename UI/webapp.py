@@ -139,9 +139,9 @@ def run_driver_management():
         else:
             if (json['camera_actions'] == "1"):
                 if (json['camera'] == "0"):
-                    command_driver_actions += " -i /dev/video1"
-                else:
                     command_driver_actions += " -i /dev/video0"
+                else:
+                    command_driver_actions += " -i /dev/video1"
 
         # Show the output in display
         if (json['show_output'] == "0"):
