@@ -1,12 +1,9 @@
 """
  Copyright (c) 2019 Intel Corporation
-
  Licensed under the Apache License, Version 2.0 (the "License");
  you may not use this file except in compliance with the License.
  You may obtain a copy of the License at
-
       http://www.apache.org/licenses/LICENSE-2.0
-
  Unless required by applicable law or agreed to in writing, software
  distributed under the License is distributed on an "AS IS" BASIS,
  WITHOUT WARRANTIES OR CONDITIONS OF ANY KIND, either express or implied.
@@ -56,7 +53,7 @@ class ResultRenderer(object):
         if logits is not None:
             labels, probs = decode_output(logits, self.lables, top_k=self.number_of_predictions,
                                           label_postprocessing=self.postprocessing)
-            print("Frame {}: {} - {:.2f}% -- {:.2f} fps".format(frame_ind, labels[0], probs[0] * 100, inference_time))
+            print("Frame {}: {} - {:.2f}% -- {:.2f}ms".format(frame_ind, labels[0], probs[0] * 100, inference_time))
         else:
             labels = ['Preparing...']
             probs = [0.]
@@ -90,11 +87,12 @@ class ResultRenderer(object):
             cv2.putText(frame, "Inference time: {:.2f}ms ({:.2f} FPS)".format(inference_time, fps),
                         text_loc, FONT_STYLE, FONT_SIZE, FONT_COLOR)
 
-        if not(self.no_show):
+        if not self.no_show:
             cv2.imshow("Action Recognition", frame)
 
-        if cv2.waitKey(1) & 0xFF == ord('q'):
-            return -1
+            key = cv2.waitKey(1) & 0xFF
+            if key in {ord('q'), ord('Q'), 27}:
+                return -1
 
 
 class LabelPostprocessing:

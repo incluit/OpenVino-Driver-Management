@@ -138,8 +138,8 @@ def run_driver_management():
                 file_input + json['file_actions'] + "'"
         else:
             if (json['camera_actions'] == "1"):
-                if (json['camera'] == "0"):
-                    command_driver_actions += " -i /dev/video1"
+                if (json['camera'] == "1"):
+                    command_driver_actions += " -i /dev/video2"
                 else:
                     command_driver_actions += " -i /dev/video0"
 

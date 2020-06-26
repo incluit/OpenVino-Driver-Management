@@ -1,12 +1,9 @@
 """
  Copyright (c) 2019 Intel Corporation
-
  Licensed under the Apache License, Version 2.0 (the "License");
  you may not use this file except in compliance with the License.
  You may obtain a copy of the License at
-
       http://www.apache.org/licenses/LICENSE-2.0
-
  Unless required by applicable law or agreed to in writing, software
  distributed under the License is distributed on an "AS IS" BASIS,
  WITHOUT WARRANTIES OR CONDITIONS OF ANY KIND, either express or implied.
@@ -25,7 +22,7 @@ from .meters import MovingAverageMeter
 from .models import AsyncWrapper, preprocess_frame
 from .pipeline import AsyncPipeline, PipelineStep
 from .queue import Signal
-from .timer import TimerGroup, IncrementalTimer
+
 
 def run_pipeline(video, encoder, decoder, render_fn, fps=30):
     pipeline = AsyncPipeline()
@@ -36,7 +33,8 @@ def run_pipeline(video, encoder, decoder, render_fn, fps=30):
 
     pipeline.run()
     pipeline.close()
-    pipeline.print_statistics()
+    ##pipeline.print_statistics()
+
 
 class DataStep(PipelineStep):
 
@@ -52,13 +50,11 @@ class DataStep(PipelineStep):
 
     def setup(self):
         self._open_video()
-        self.max_frames = 16
 
     def process(self, item):
         if not self.cap.isOpened() and not self._open_video():
             return Signal.STOP
-        for i in range(round(self.cap.get(cv2.CAP_PROP_FPS)/self.max_frames)):
-            status, frame = self.cap.read()
+        status, frame = self.cap.read()
         if not status:
             return Signal.STOP
         return frame
@@ -68,6 +64,10 @@ class DataStep(PipelineStep):
 
     def _open_video(self):
         next_video = next(self._video_cycle)
+        try:
+            next_video = int(next_video)
+        except ValueError:
+            pass
         self.cap = cv2.VideoCapture(next_video)
         if not self.cap.isOpened():
             return False
@@ -151,12 +151,12 @@ class RenderStep(PipelineStep):
         self._render_time.update(time.time() - render_start)
 
         self._frames_processed += 1
-        if status is not None and status < 0 or self._frames_processed == 17:
+        if status is not None and status < 0:
             return Signal.STOP_IMMEDIATELY
         return status
 
-#    def end(self):
-#        cv2.destroyAllWindows()
+    def end(self):
+        cv2.destroyAllWindows()
 
     def _sync_time(self):
         now = time.time()

@@ -1,12 +1,9 @@
 """
  Copyright (c) 2019 Intel Corporation
-
  Licensed under the Apache License, Version 2.0 (the "License");
  you may not use this file except in compliance with the License.
  You may obtain a copy of the License at
-
       http://www.apache.org/licenses/LICENSE-2.0
-
  Unless required by applicable law or agreed to in writing, software
  distributed under the License is distributed on an "AS IS" BASIS,
  WITHOUT WARRANTIES OR CONDITIONS OF ANY KIND, either express or implied.
@@ -19,7 +16,6 @@ from itertools import cycle
 
 import cv2
 import numpy as np
-from openvino.inference_engine import IENetwork
 
 
 def center_crop(frame, crop_size):
@@ -87,7 +83,7 @@ class IEModel:
 
         # Read IR
         print("Reading IR...")
-        self.net = IENetwork(model_xml, model_bin)
+        self.net = ie_core.read_network(model_xml, model_bin)
         self.net.batch_size = batch_size
         assert len(self.net.inputs.keys()) == 1, "One input is expected"
         assert len(self.net.outputs) == 1, "One output is expected"
