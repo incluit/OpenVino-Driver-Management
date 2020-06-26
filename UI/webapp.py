@@ -162,6 +162,9 @@ def run_driver_management():
                 file_input + json['file'] + "'"
         else:
             command_driver_behaviour += " -i cam"
+        
+        if (json['rosbag'] == "1"):
+            command_driver_behaviour += " -ros_sim"
 
         if (json['model'] == "face-detection-adas-0001"):
             if (json['precision'] == "FP16"):
@@ -200,6 +203,8 @@ def run_driver_management():
         # Synchronous / Asynchronous mode
         if (json['async'] == "1"):
             command_driver_behaviour += " -async"
+        if (json['no_show_det'] == "1"):
+            command_driver_behaviour += " -no_show_det"
         command_driver_behaviour += " -pid_da "
 
         commands = [command_rosbag, command_driver_actions,

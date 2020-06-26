@@ -124,6 +124,9 @@ static const char no_wait_for_keypress_message[] = "No wait for key press in the
 /// @brief message no show processed video
 static const char no_show_processed_video[] = "No show processed video.";
 
+/// @brief message no show detections
+static const char no_show_detections[] = "No show detections results.";
+
 /// @brief message for driver recognition mode
 static const char drecog_message[] = "Enable driver recognition mode";
 
@@ -156,6 +159,9 @@ static const char topic_message[] = "Topic to publish and to subscribe to";
 
 // AWS Client ID
 static const char clientid_message[] = "Client id to use (optional)";
+
+// Ros Simulation
+static const char ros_sim_message[] = "Enable ROS2 data simulation (optional)";
 
 static const char pid_da_message[] = "PID of driver_actions.py";
 
@@ -268,6 +274,10 @@ DEFINE_bool(no_wait, false, no_wait_for_keypress_message);
 /// It is an optional parameter
 DEFINE_bool(no_show, false, no_show_processed_video);
 
+/// \brief Flag to disable detections results<br>
+/// It is an optional parameter
+DEFINE_bool(no_show_det, false, no_show_detections);
+
 /// \brief Flag to enable driver recognition from database
 /// It is an optional parameter
 DEFINE_bool(d_recognition, false, drecog_message);
@@ -299,6 +309,8 @@ DEFINE_string(rootca, "", rootca_message);
 DEFINE_string(topic, "", topic_message);
 
 DEFINE_string(clientid, "", clientid_message);
+
+DEFINE_bool(ros_sim, false, ros_sim_message);
 
 DEFINE_uint32(pid_da, 0, pid_da_message);
 
@@ -344,6 +356,7 @@ static void showUsage() {
     std::cout << "    -no_async                  " << no_async_message << std::endl;
     std::cout << "    -no_wait                   " << no_wait_for_keypress_message << std::endl;
     std::cout << "    -no_show                   " << no_show_processed_video << std::endl;
+    std::cout << "    -no_show_det               " << no_show_detections << std::endl;
     std::cout << "    -pc                        " << performance_counter_message << std::endl;
     std::cout << "    -r                         " << raw_output_message << std::endl;
     std::cout << "    -o                         " << video_output_message << std::endl;
@@ -358,4 +371,5 @@ static void showUsage() {
     std::cout << "    -rootca                    " << rootca_message << std::endl;
     std::cout << "    -topic                     " << topic_message << std::endl;
     std::cout << "    -clientid                  " << clientid_message << std::endl;
+    std::cout << "    -ros_sim                   " << ros_sim_message << std::endl;
 }
