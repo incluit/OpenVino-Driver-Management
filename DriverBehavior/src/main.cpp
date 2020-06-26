@@ -192,7 +192,6 @@ std::string driver_name = "";
 Timer timer;
 int firstTime = 0;
 Truck truck;
-bool fSim = false;
 
 int maxNormal = 40;
 int maxWarning = 70;
@@ -341,14 +340,14 @@ void alarmDistraction(cv::Mat prev_frame, int is_dist, int y_alarm, int x_truck_
 		switch (is_dist)
 		{
 		case DISTRACTED:
-			if (truck.getSpeed() * 3.6 >= 5 || !fSim)
+			if (truck.getSpeed() * 3.6 >= 5 && FLAGS_ros_sim || !FLAGS_ros_sim)
 			{
 				labelAlarm = "EYES OUT OF ROAD";
 				falarmDistraction = true;
 			}
 			break;
 		case PHONE:
-			if (truck.getSpeed() * 3.6 >= 2 || truck.getSpeed() * 3.6 <= -2 || !fSim)
+			if (((truck.getSpeed() * 3.6 >= 2 || truck.getSpeed() * 3.6 <= -2) && FLAGS_ros_sim) || !FLAGS_ros_sim)
 			{
 				labelAlarm = "LOOKING AT THE PHONE";
 				falarmDistraction = true;
@@ -468,7 +467,7 @@ void driver_recognition(cv::Mat prev_frame, std::vector<FaceDetection::Result> p
 
 		face_identified = identify_driver(aux_prev_frame, &prev_detection_results, &landmarks_detector, &face_reid, &face_gallery, driver_name);
 
-		if (!prev_detection_results.empty())
+		if (!prev_detection_results.empty() && !FLAGS_no_show_det)
 			cv::rectangle(prev_frame, prev_detection_results[0].location, cv::Scalar(255, 255, 255), 1);
 		firstTime = 1;
 		timer.start("face_identified");
@@ -530,8 +529,8 @@ int main(int argc, char *argv[])
 {
 
 	rclcpp::init(argc, argv);
+
 	std::thread truck_data(ros_client, &truck);
-	fSim = true;
 
 	try
 	{
@@ -1012,7 +1011,7 @@ int main(int argc, char *argv[])
 								cv::Scalar(255, 0, 0));
 				}
 
-				if ((truck.getEngine() && fSim) || !fSim) // Detect if Engine = ON and Simulator Flag
+				if (truck.getEngine() && FLAGS_ros_sim || !FLAGS_ros_sim) // Detect if Engine = ON and Simulator Flag
 				{
 					// Thread 1: Driver Recognition
 					timer.start("land marks");
@@ -1049,7 +1048,10 @@ int main(int argc, char *argv[])
 						cv::Rect rect = result.location;
 
 						out.str("");
-						cv::rectangle(prev_frame, rect, cv::Scalar(255, 255, 255), 1);
+						if (!FLAGS_no_show_det)
+						{
+							cv::rectangle(prev_frame, rect, cv::Scalar(255, 255, 255), 1);
+						}
 						if (FLAGS_dlib_lm)
 						{
 							float scale_factor_x = 0.15;
@@ -1065,19 +1067,28 @@ int main(int argc, char *argv[])
 								if (i >= 36 && i <= 41)
 								{
 									left_eye.push_back(cv::Point2l(shape.part(i).x(), shape.part(i).y()));
-									cv::circle(prev_frame, cv::Point2l(shape.part(i).x(), shape.part(i).y()), 1 + static_cast<int>(0.0012 * rect.width), cv::Scalar(0, 255, 255), -1);
+									if (!FLAGS_no_show_det)
+									{
+										cv::circle(prev_frame, cv::Point2l(shape.part(i).x(), shape.part(i).y()), 1 + static_cast<int>(0.0012 * rect.width), cv::Scalar(0, 255, 255), -1);
+									}
 								}
 								if (i >= 42 && i <= 47)
 								{
 									right_eye.push_back(cv::Point2l(shape.part(i).x(), shape.part(i).y()));
-									cv::circle(prev_frame, cv::Point2l(shape.part(i).x(), shape.part(i).y()), 1 + static_cast<int>(0.0012 * rect.width), cv::Scalar(0, 255, 255), -1);
+									if (!FLAGS_no_show_det)
+									{
+										cv::circle(prev_frame, cv::Point2l(shape.part(i).x(), shape.part(i).y()), 1 + static_cast<int>(0.0012 * rect.width), cv::Scalar(0, 255, 255), -1);
+									}
 								}
 								//48 - 54. 50 - 58. 52 - 56.
 
 								if (i == 48 || i == 54 || i == 50 || i == 58 || i == 52 || i == 56)
 								{
 									mouth.push_back(cv::Point2l(shape.part(i).x(), shape.part(i).y()));
-									cv::circle(prev_frame, cv::Point2l(shape.part(i).x(), shape.part(i).y()), 1 + static_cast<int>(0.0012 * rect.width), cv::Scalar(0, 255, 255), -1);
+									if (!FLAGS_no_show_det)
+									{
+										cv::circle(prev_frame, cv::Point2l(shape.part(i).x(), shape.part(i).y()), 1 + static_cast<int>(0.0012 * rect.width), cv::Scalar(0, 255, 255), -1);
+									}
 								}
 							}
 							float ear_left = 0;
@@ -1175,7 +1186,10 @@ int main(int argc, char *argv[])
 										  << headPoseDetector[ii].angle_r << std::endl;
 							}
 							cv::Point3f center(rect.x + rect.width / 2, rect.y + rect.height / 2, 0);
-							headPoseDetector.drawAxes(prev_frame, center, headPoseDetector[ii], 50);
+							if (!FLAGS_no_show_det)
+							{
+								headPoseDetector.drawAxes(prev_frame, center, headPoseDetector[ii], 50);
+							}
 							pitch.push_front(headPoseDetector[ii].angle_p);
 							headbutt = headbuttDetection(&pitch);
 
@@ -1202,51 +1216,52 @@ int main(int argc, char *argv[])
 						ii++;
 					}
 
-					// Truck Label
+					if (FLAGS_ros_sim)
+					{
+						// Truck Label
+						cv::rectangle(prev_frame, cv::Rect(width - (x + 40), y_truck_i + 20, x + 20, y + 130), cv::Scalar(0, 0, 0), -1);
+						cv::rectangle(prev_frame, cv::Rect(width - (x + 40), y_truck_i + 20, x + 20, y + 130), cv::Scalar(255, 255, 255), 2);
 
-					cv::rectangle(prev_frame, cv::Rect(width - (x + 40), y_truck_i + 20, x + 20, y + 130), cv::Scalar(0, 0, 0), -1);
-					cv::rectangle(prev_frame, cv::Rect(width - (x + 40), y_truck_i + 20, x + 20, y + 130), cv::Scalar(255, 255, 255), 2);
+						cv::putText(prev_frame, "Truck Information", cv::Point2f(x_truck_i, y_truck_i + 40), cv::FONT_HERSHEY_SIMPLEX, 0.5, cv::Scalar(255, 255, 255), 2);
 
-					cv::putText(prev_frame, "Truck Information", cv::Point2f(x_truck_i, y_truck_i + 40), cv::FONT_HERSHEY_SIMPLEX, 0.5, cv::Scalar(255, 255, 255), 2);
+						if (truck.getEngine())
+							cv::putText(prev_frame, "Engine: ON", cv::Point2f(x_truck_i, y_truck_i + 60), cv::FONT_HERSHEY_SIMPLEX, 0.3, cv::Scalar(0, 255, 0), 1.8);
+						else
+							cv::putText(prev_frame, "Engine: OFF", cv::Point2f(x_truck_i, y_truck_i + 60), cv::FONT_HERSHEY_SIMPLEX, 0.3, cv::Scalar(0, 0, 255), 1.8);
 
-					if (truck.getEngine())
-						cv::putText(prev_frame, "Engine: ON", cv::Point2f(x_truck_i, y_truck_i + 60), cv::FONT_HERSHEY_SIMPLEX, 0.3, cv::Scalar(0, 255, 0), 1.8);
-					else
-						cv::putText(prev_frame, "Engine: OFF", cv::Point2f(x_truck_i, y_truck_i + 60), cv::FONT_HERSHEY_SIMPLEX, 0.3, cv::Scalar(0, 0, 255), 1.8);
+						if (truck.getParkingBrake())
+							cv::putText(prev_frame, "GearStatus: Parking", cv::Point2f(x_truck_i, y_truck_i + 75), cv::FONT_HERSHEY_SIMPLEX, 0.3, cv::Scalar(0, 0, 255), 1.2);
+						else if (truck.getSpeed() < -0.03)
+							cv::putText(prev_frame, "GearStatus: Reverse", cv::Point2f(x_truck_i, y_truck_i + 75), cv::FONT_HERSHEY_SIMPLEX, 0.3, cv::Scalar(255, 255, 255), 1.2);
+						else if (truck.getSpeed() > 0.03)
+							cv::putText(prev_frame, "GearStatus: Driving", cv::Point2f(x_truck_i, y_truck_i + 75), cv::FONT_HERSHEY_SIMPLEX, 0.3, cv::Scalar(255, 255, 255), 1.2);
+						else
+							cv::putText(prev_frame, "GearStatus: Stopped", cv::Point2f(x_truck_i, y_truck_i + 75), cv::FONT_HERSHEY_SIMPLEX, 0.3, cv::Scalar(255, 255, 255), 1.2);
 
-					if (truck.getParkingBrake())
-						cv::putText(prev_frame, "GearStatus: Parking", cv::Point2f(x_truck_i, y_truck_i + 75), cv::FONT_HERSHEY_SIMPLEX, 0.3, cv::Scalar(0, 0, 255), 1.2);
-					else if (truck.getSpeed() < -0.03)
-						cv::putText(prev_frame, "GearStatus: Reverse", cv::Point2f(x_truck_i, y_truck_i + 75), cv::FONT_HERSHEY_SIMPLEX, 0.3, cv::Scalar(255, 255, 255), 1.2);
-					else if (truck.getSpeed() > 0.03)
-						cv::putText(prev_frame, "GearStatus: Driving", cv::Point2f(x_truck_i, y_truck_i + 75), cv::FONT_HERSHEY_SIMPLEX, 0.3, cv::Scalar(255, 255, 255), 1.2);
-					else
-						cv::putText(prev_frame, "GearStatus: Stopped", cv::Point2f(x_truck_i, y_truck_i + 75), cv::FONT_HERSHEY_SIMPLEX, 0.3, cv::Scalar(255, 255, 255), 1.2);
+						if (truck.getTrailer())
+							cv::putText(prev_frame, "Trailer: ON", cv::Point2f(x_truck_i, y_truck_i + 90), cv::FONT_HERSHEY_SIMPLEX, 0.3, cv::Scalar(0, 255, 0), 1.2);
+						else
+							cv::putText(prev_frame, "Trailer: OFF", cv::Point2f(x_truck_i, y_truck_i + 90), cv::FONT_HERSHEY_SIMPLEX, 0.3, cv::Scalar(0, 0, 255), 1.2);
 
-					if (truck.getTrailer())
-						cv::putText(prev_frame, "Trailer: ON", cv::Point2f(x_truck_i, y_truck_i + 90), cv::FONT_HERSHEY_SIMPLEX, 0.3, cv::Scalar(0, 255, 0), 1.2);
-					else
-						cv::putText(prev_frame, "Trailer: OFF", cv::Point2f(x_truck_i, y_truck_i + 90), cv::FONT_HERSHEY_SIMPLEX, 0.3, cv::Scalar(0, 0, 255), 1.2);
+						cv::putText(prev_frame, cv::format("Speed (Km/h): %3.2f", (truck.getSpeed())), cv::Point2f(x_truck_i, y_truck_i + 105), cv::FONT_HERSHEY_SIMPLEX, 0.3, cv::Scalar(255, 255, 255), 1.2);
+						cv::putText(prev_frame, "RPM: " + std::to_string(truck.getRpm()), cv::Point2f(x_truck_i, y_truck_i + 120), cv::FONT_HERSHEY_SIMPLEX, 0.3, cv::Scalar(255, 255, 255), 1.2);
+						cv::putText(prev_frame, "Gear: " + std::to_string(truck.getGear()), cv::Point2f(x_truck_i, y_truck_i + 135), cv::FONT_HERSHEY_SIMPLEX, 0.3, cv::Scalar(255, 255, 255), 1.2);
 
-					cv::putText(prev_frame, cv::format("Speed (Km/h): %3.2f", (truck.getSpeed())), cv::Point2f(x_truck_i, y_truck_i + 105), cv::FONT_HERSHEY_SIMPLEX, 0.3, cv::Scalar(255, 255, 255), 1.2);
-					cv::putText(prev_frame, "RPM: " + std::to_string(truck.getRpm()), cv::Point2f(x_truck_i, y_truck_i + 120), cv::FONT_HERSHEY_SIMPLEX, 0.3, cv::Scalar(255, 255, 255), 1.2);
-					cv::putText(prev_frame, "Gear: " + std::to_string(truck.getGear()), cv::Point2f(x_truck_i, y_truck_i + 135), cv::FONT_HERSHEY_SIMPLEX, 0.3, cv::Scalar(255, 255, 255), 1.2);
+						if (truck.getCruiseControl() > 0.03)
+							cv::putText(prev_frame, cv::format("Cruice (Km/h): %3.2f", truck.getCruiseControl() * 3.6), cv::Point2f(x_truck_i, y_truck_i + 150), cv::FONT_HERSHEY_SIMPLEX, 0.3, cv::Scalar(255, 255, 255), 1.2);
+						else
+							cv::putText(prev_frame, "Cruice: OFF", cv::Point2f(x_truck_i, y_truck_i + 150), cv::FONT_HERSHEY_SIMPLEX, 0.3, cv::Scalar(255, 255, 255), 1.2);
 
-					if (truck.getCruiseControl() > 0.03)
-						cv::putText(prev_frame, cv::format("Cruice (Km/h): %3.2f", truck.getCruiseControl() * 3.6), cv::Point2f(x_truck_i, y_truck_i + 150), cv::FONT_HERSHEY_SIMPLEX, 0.3, cv::Scalar(255, 255, 255), 1.2);
-					else
-						cv::putText(prev_frame, "Cruice: OFF", cv::Point2f(x_truck_i, y_truck_i + 150), cv::FONT_HERSHEY_SIMPLEX, 0.3, cv::Scalar(255, 255, 255), 1.2);
-
-					cv::putText(prev_frame, cv::format("Air Pressure (psi): %3.2f", truck.getAirPressure()), cv::Point2f(x_truck_i, y_truck_i + 165), cv::FONT_HERSHEY_SIMPLEX, 0.3, cv::Scalar(255, 255, 255), 1.2);
-					cv::putText(prev_frame, cv::format("Battery (V): %3.2f", truck.getBattery()), cv::Point2f(x_truck_i, y_truck_i + 180), cv::FONT_HERSHEY_SIMPLEX, 0.3, cv::Scalar(255, 255, 255), 1.2);
-					cv::putText(prev_frame, cv::format("Fuel (l): %3.2f", truck.getFuel()), cv::Point2f(x_truck_i, y_truck_i + 195), cv::FONT_HERSHEY_SIMPLEX, 0.3, cv::Scalar(255, 255, 255), 1.2);
-					cv::putText(prev_frame, cv::format("Fuel Average (l/km): %3.2f", truck.getFuelAverage()), cv::Point2f(x_truck_i, y_truck_i + 210), cv::FONT_HERSHEY_SIMPLEX, 0.3, cv::Scalar(255, 255, 255), 1.2);
-					cv::putText(prev_frame, cv::format("Cargo Mass (Kg): %3.2f", truck.getCargoMass()), cv::Point2f(x_truck_i, y_truck_i + 225), cv::FONT_HERSHEY_SIMPLEX, 0.3, cv::Scalar(255, 255, 255), 1.2);
-					cv::putText(prev_frame, cv::format("Wheel Wear: %3.2f", truck.getWearWheels() * 100), cv::Point2f(x_truck_i, y_truck_i + 240), cv::FONT_HERSHEY_SIMPLEX, 0.3, cv::Scalar(255, 255, 255), 1.2);
-					cv::putText(prev_frame, cv::format("Trailer Wear: %3.2f", truck.getWearChassis() * 100), cv::Point2f(x_truck_i, y_truck_i + 255), cv::FONT_HERSHEY_SIMPLEX, 0.3, cv::Scalar(255, 255, 255), 1.2);
-					cv::putText(prev_frame, cv::format("Engine Wear: %3.2f", truck.getWearEngine() * 100), cv::Point2f(x_truck_i, y_truck_i + 270), cv::FONT_HERSHEY_SIMPLEX, 0.3, cv::Scalar(255, 255, 255), 1.2);
-					cv::putText(prev_frame, cv::format("Transmission Wear: %3.2f", truck.getWearTransmission() * 100), cv::Point2f(x_truck_i, y_truck_i + 285), cv::FONT_HERSHEY_SIMPLEX, 0.3, cv::Scalar(255, 255, 255), 1.2);
-
+						cv::putText(prev_frame, cv::format("Air Pressure (psi): %3.2f", truck.getAirPressure()), cv::Point2f(x_truck_i, y_truck_i + 165), cv::FONT_HERSHEY_SIMPLEX, 0.3, cv::Scalar(255, 255, 255), 1.2);
+						cv::putText(prev_frame, cv::format("Battery (V): %3.2f", truck.getBattery()), cv::Point2f(x_truck_i, y_truck_i + 180), cv::FONT_HERSHEY_SIMPLEX, 0.3, cv::Scalar(255, 255, 255), 1.2);
+						cv::putText(prev_frame, cv::format("Fuel (l): %3.2f", truck.getFuel()), cv::Point2f(x_truck_i, y_truck_i + 195), cv::FONT_HERSHEY_SIMPLEX, 0.3, cv::Scalar(255, 255, 255), 1.2);
+						cv::putText(prev_frame, cv::format("Fuel Average (l/km): %3.2f", truck.getFuelAverage()), cv::Point2f(x_truck_i, y_truck_i + 210), cv::FONT_HERSHEY_SIMPLEX, 0.3, cv::Scalar(255, 255, 255), 1.2);
+						cv::putText(prev_frame, cv::format("Cargo Mass (Kg): %3.2f", truck.getCargoMass()), cv::Point2f(x_truck_i, y_truck_i + 225), cv::FONT_HERSHEY_SIMPLEX, 0.3, cv::Scalar(255, 255, 255), 1.2);
+						cv::putText(prev_frame, cv::format("Wheel Wear: %3.2f", truck.getWearWheels() * 100), cv::Point2f(x_truck_i, y_truck_i + 240), cv::FONT_HERSHEY_SIMPLEX, 0.3, cv::Scalar(255, 255, 255), 1.2);
+						cv::putText(prev_frame, cv::format("Trailer Wear: %3.2f", truck.getWearChassis() * 100), cv::Point2f(x_truck_i, y_truck_i + 255), cv::FONT_HERSHEY_SIMPLEX, 0.3, cv::Scalar(255, 255, 255), 1.2);
+						cv::putText(prev_frame, cv::format("Engine Wear: %3.2f", truck.getWearEngine() * 100), cv::Point2f(x_truck_i, y_truck_i + 270), cv::FONT_HERSHEY_SIMPLEX, 0.3, cv::Scalar(255, 255, 255), 1.2);
+						cv::putText(prev_frame, cv::format("Transmission Wear: %3.2f", truck.getWearTransmission() * 100), cv::Point2f(x_truck_i, y_truck_i + 285), cv::FONT_HERSHEY_SIMPLEX, 0.3, cv::Scalar(255, 255, 255), 1.2);
+					}
 					// End Thread 1: Driver Recognition
 					thread_recognition.join();
 				}
