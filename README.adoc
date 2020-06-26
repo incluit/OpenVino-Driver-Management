@@ -80,16 +80,37 @@ make docker-build
 make docker-run
 ----
 
-**5.** Inside the docker run:
+== Run
+
+**1.** Start the docker:
+[source,bash]
+----
+make docker-start
+----
+
+**2.** Inside the docker run:
 [source,bash]
 ----
 make run
 ----
 
-**6.** AWS:
+**3.** AWS:
 
 Add the certificates of AWS in the UI
 
+== Docker Options
+
+* Stop the docker container
+[source,bash]
+----
+make docker-stop
+----
+
+* Remove the docker container
+[source,bash]
+----
+make docker-remove
+----
 
 == To Do
 
