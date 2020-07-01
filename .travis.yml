@@ -12,7 +12,8 @@ before_script:
   - docker build -t driver-management .
 
 script:
-  - echo "Testing the pipeline"
+  - docker run --name dmcont -t -d --volume="$HOME/.Xauthority:/root/.Xauthority:rw" driver-management
 
 after_script:
-  - pwd
+  - docker ps
+  - docker system prune -a
