@@ -13,7 +13,8 @@ before_script:
 
 script:
   - docker run --name dmcont -t -d --volume="$HOME/.Xauthority:/root/.Xauthority:rw" driver-management
+  - echo ${INTEL_OPENVINO_DIR}
 
 after_script:
   - docker ps
-  - docker system prune -a
+  - docker system prune -a -f
