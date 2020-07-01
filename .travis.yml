@@ -9,7 +9,7 @@ before_install:
   - sudo apt-get update
 
 before_script:
-  - docker build -t Driver-Management .
+  - docker build -t driver-management .
 
 script:
   - echo "Testing the pipeline"
