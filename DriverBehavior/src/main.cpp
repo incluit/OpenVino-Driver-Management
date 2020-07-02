@@ -1313,7 +1313,7 @@ int main(int argc, char *argv[])
 				v1.get<picojson::object>()["location"] = picojson::value(std::to_string(-31.4070109)+","+std::to_string(-64.1924054)); // Example Position
 				v1.get<picojson::object>()["engine"] = picojson::value(truck.getEngine());
 				v1.get<picojson::object>()["trailer_connected"] = picojson::value(truck.getTrailer());
-				//v1.get<picojson::object>()["speed"] = picojson::value(std::to_string(100.0));
+				v1.get<picojson::object>()["speed"] = picojson::value(truck.getSpeed());
 				v1.get<picojson::object>()["rpm"] = picojson::value(std::to_string(truck.getRpm()));
 				v1.get<picojson::object>()["gear"] = picojson::value(std::to_string(truck.getGear()));
 				v1.get<picojson::object>()["cruise_control"] = picojson::value(truck.getCruiseControl());
