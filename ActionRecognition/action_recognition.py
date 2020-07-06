@@ -81,9 +81,17 @@ def build_argparser():
     return parser
 
 def receiveSignal(signalNumber, frame):
+    print(signalNumber)
     global state
     if (state["ready"]):
         state["signal"] = True
+    return
+
+def receiveSignal2(signalNumber, frame):
+    print(signalNumber)
+    # global state
+    # if (state["ready"]):
+    #     state["signal"] = True
     return
 
 def terminateProcess(signalNumber, frame):
@@ -94,6 +102,7 @@ def main():
     args = build_argparser().parse_args()
 
     signal.signal(signal.SIGUSR1, receiveSignal)
+    signal.signal(signal.SIGUSR2, receiveSignal2)
     signal.signal(signal.SIGINT, terminateProcess)
     signal.signal(signal.SIGTERM, terminateProcess)
 
