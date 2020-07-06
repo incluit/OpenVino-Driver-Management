@@ -1,6 +1,7 @@
 #include <gflags/gflags.h>
 #include <functional>
 #include <iostream>
+#include <ctime>
 #include <fstream>
 #include <random>
 #include <memory>
@@ -1295,11 +1296,20 @@ int main(int argc, char *argv[])
 				picojson::value v;
 				picojson::value v1;
 
+				time_t rawtime;
+				struct tm * timeinfo;
+				char buffer[80];
+				time (&rawtime);
+				timeinfo = localtime(&rawtime);
+
 				v.set<picojson::object>(picojson::object());
 				v1.set<picojson::object>(picojson::object());
 
 				unsigned long milliseconds_time = std::chrono::duration_cast<std::chrono::milliseconds>(std::chrono::system_clock::now().time_since_epoch()).count();
 				v1.get<picojson::object>()["timestamp"] = picojson::value((double)milliseconds_time);
+				strftime(buffer,sizeof(buffer),"%Y-%m-%dT%H:%M:%S",timeinfo);
+  				std::string str(buffer);
+				v1.get<picojson::object>()["@timestamp"] = picojson::value(buffer);
 				v1.get<picojson::object>()["name"] = picojson::value(driver_name);
 				v1.get<picojson::object>()["drowsiness"] = picojson::value(tDrowsiness);
 				v1.get<picojson::object>()["distraction"] = picojson::value(tDistraction);
@@ -1309,15 +1319,12 @@ int main(int argc, char *argv[])
 				else
 					dangMap = tDistraction;
 				v1.get<picojson::object>()["dangMap"] = picojson::value(dangMap);
-				//          v.get<picojson::object>()["driver"].set<picojson::array>(picojson::array());
-				//  	    v.get<picojson::object>()["driver"].get<picojson::array>().push_back(v1);
-				//  	    v.get<picojson::object>()["driver"] = v1;
 
 				// Truck Information
-				//v1.get<picojson::object>()["location"] = picojson::value(std::to_string(pos_lat)+","+std::to_string(pos_lon));
+				v1.get<picojson::object>()["location"] = picojson::value(std::to_string(-31.4070109)+","+std::to_string(-64.1924054)); // Example Position
 				v1.get<picojson::object>()["engine"] = picojson::value(truck.getEngine());
 				v1.get<picojson::object>()["trailer_connected"] = picojson::value(truck.getTrailer());
-				//v1.get<picojson::object>()["speed"] = picojson::value(std::to_string(100.0));
+				v1.get<picojson::object>()["speed"] = picojson::value(truck.getSpeed());
 				v1.get<picojson::object>()["rpm"] = picojson::value(std::to_string(truck.getRpm()));
 				v1.get<picojson::object>()["gear"] = picojson::value(std::to_string(truck.getGear()));
 				v1.get<picojson::object>()["cruise_control"] = picojson::value(truck.getCruiseControl());
