@@ -20,7 +20,7 @@
 
 #include <inference_engine.hpp>
 
-#include <samples/slog.hpp>
+#include <slog.hpp>
 
 #include "customflags.hpp"
 #include "detectors.hpp"
@@ -194,7 +194,7 @@ Timer timer;
 int firstTime = 0;
 Truck truck;
 
-int maxOK = 30;
+int maxOK = 35;
 int maxNormal = 40;
 int maxWarning = 70;
 int maxCritical = 100; //Max Drowsiness value

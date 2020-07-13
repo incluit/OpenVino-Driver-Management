@@ -33,6 +33,8 @@ else()
     return()
 endif()
 
+find_package(gflags REQUIRED)
+
 if ( SIMULATOR )
     find_package(ament_cmake REQUIRED)
     find_package(ament_index_cpp REQUIRED)
@@ -77,11 +79,11 @@ include_directories (aws-crt-cpp/aws-common-runtime/aws-c-common/include)
 include_directories (ets_ros2/install/ets_plugin/include)
 include_directories (ets_ros2/install/ets_msgs/include)
 include_directories (ets_ros2/install/ets_cpp_client/include)
+include_directories (src/common)
 
 # Create library file from sources.
 add_executable(${TARGET_NAME} ${MAIN_SRC} ${MAIN_HEADERS})
 
-add_dependencies(${TARGET_NAME} gflags)
 add_definitions(-DBOOST_LOG_DYN_LINK)
 
 add_definitions(-DSIMULATOR)
@@ -89,8 +91,9 @@ add_definitions(-DSIMULATOR)
 
 set_target_properties(${TARGET_NAME} PROPERTIES "CMAKE_CXX_FLAGS" "${CMAKE_CXX_FLAGS} -fPIE" COMPILE_PDB_NAME ${TARGET_NAME})
 
-target_link_libraries(${TARGET_NAME} format_reader ${IE_LIBRARIES} ${InferenceEngine_LIBRARIES} gflags aws-crt-cpp)
+target_link_libraries(${TARGET_NAME} ${IE_LIBRARIES} ${InferenceEngine_LIBRARIES} aws-crt-cpp)
 
+target_link_libraries(${TARGET_NAME} gflags)
 
 target_include_directories(${PROJECT_NAME} PUBLIC
         $<BUILD_INTERFACE:${CMAKE_CURRENT_SOURCE_DIR}/include>

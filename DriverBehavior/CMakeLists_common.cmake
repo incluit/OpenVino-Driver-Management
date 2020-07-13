@@ -131,46 +131,18 @@ set (CMAKE_CXX_STANDARD_REQUIRED ON)
 set(CMAKE_CXX_FLAGS "-std=c++14 ${CMAKE_CXX_FLAGS}")
 ####################################
 
-# Make sure dependencies are present
-set(IE_SAMPLES_GFLAGS_DIR "${InferenceEngine_Samples_DIR}/cpp/thirdparty/gflags")
-set(IE_SAMPLES_FORMAT_READER_DIR "${InferenceEngine_Samples_DIR}/cpp/common/format_reader")
-
-if(NOT EXISTS "${IE_SAMPLES_GFLAGS_DIR}/CMakeLists.txt")
-    message(FATAL_ERROR "The required 'gflags' library was not found in the Inference Engine's samples at: ${IE_SAMPLES_GFLAGS_DIR}")
-endif()
-if(NOT EXISTS "${IE_SAMPLES_FORMAT_READER_DIR}/CMakeLists.txt")
-    message(FATAL_ERROR "The required 'format_reader' library was not found in the Inference Engine's samples at: ${IE_SAMPLES_GFLAGS_DIR}")
-endif()
 
 # Properties->C/C++->General->Additional Include Directories
 include_directories (
-    ${InferenceEngine_Samples_DIR}/cpp/common/format_reader
     ${InferenceEngine_Samples_DIR}
     ${InferenceEngine_Samples_DIR}/../include
-    ${InferenceEngine_Samples_DIR}/cpp/thirdparty/gflags/include
     ${InferenceEngine_Samples_DIR}/cpp/common
     $ENV{InferenceEngine_DIR}/external/tbb/lib
 )
 
-set(GFLAGS_IS_SUBPROJECT TRUE)
-add_subdirectory(${IE_SAMPLES_GFLAGS_DIR} ${CMAKE_CURRENT_BINARY_DIR}/gflags)
-add_subdirectory(${IE_SAMPLES_FORMAT_READER_DIR} ${CMAKE_CURRENT_BINARY_DIR}/format_reader)
-
 if (UNIX)
     SET(LIB_DL dl)
 endif()
-
-#add_subdirectory(object_detection_sample)
-#add_subdirectory(interactive_face_detection_sample)
-#add_subdirectory(security_barrier_camera_sample)
-#add_subdirectory(object_detection_demo_ssd_async)
-#add_subdirectory(object_detection_sample_ssd)
-#add_subdirectory(classification_sample)
-#add_subdirectory(classification_sample_async)
-#add_subdirectory(hello_classification)
-#add_subdirectory(hello_request_classification)
-#add_subdirectory(segmentation_sample)
-#add_subdirectory(style_transfer_sample)
 
 #if (OpenCV_FOUND)
 #    add_subdirectory(validation_app)

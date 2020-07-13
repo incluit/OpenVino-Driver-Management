@@ -28,7 +28,7 @@ from openvino.inference_engine import IECore
 
 from include.models import IEModel
 from include.result_renderer import ResultRenderer
-from include.steps import run_pipeline
+from include.steps import run_pipeline, stop_pipeline
 from include.config import *
 #import boto3
 #from botocore.exceptions import NoCredentialsError
@@ -38,9 +38,8 @@ from os import path
 state = {"signal": False, "ready": True }
 AllowedActions = ['both', 'publish', 'subscribe']
 
-def video_demo(encoder, decoder, videos, fps=30, labels=None, no_show=False, publicAWS=None):
+def video_demo(encoder, decoder, videos, result_presenter, fps=30):
     """Continuously run demo on provided video list"""
-    result_presenter = ResultRenderer(labels=labels, no_show = no_show, publicAWS = publicAWS)
     run_pipeline(videos, encoder, decoder, result_presenter.render_frame, fps=fps)
 
 def build_argparser():
@@ -81,17 +80,13 @@ def build_argparser():
     return parser
 
 def receiveSignal(signalNumber, frame):
-    print(signalNumber)
     global state
     if (state["ready"]):
         state["signal"] = True
     return
 
 def receiveSignal2(signalNumber, frame):
-    print(signalNumber)
-    # global state
-    # if (state["ready"]):
-    #     state["signal"] = True
+    stop_pipeline()
     return
 
 def terminateProcess(signalNumber, frame):
@@ -166,16 +161,17 @@ def main():
                       num_requests=(3 if args.device == 'MYRIAD' else 1))
     decoder = IEModel(decoder_xml, decoder_bin, ie, decoder_target_device, num_requests=2)
     print("Waiting on signal")
+    if args.rootCAPath:
+        result_presenter = ResultRenderer(labels, args.no_show, publicAWS)
+    else:
+        result_presenter = ResultRenderer(labels, args.no_show)
+
     while (True):
         time.sleep(1)
         if (state["signal"]):
             state["signal"] = False
             state["ready"] = False
-            #upload_to_aws('README.md', 'driver-actions', 'README100.md')
-            if args.rootCAPath:
-                video_demo(encoder, decoder, videos, args.fps, labels, args.no_show, publicAWS)
-            else:
-                video_demo(encoder, decoder, videos, args.fps, labels, args.no_show)
+            video_demo(encoder, decoder, videos, result_presenter, args.fps)
             state["ready"] = True
 
 if __name__ == '__main__':
