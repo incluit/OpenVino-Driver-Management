@@ -194,6 +194,7 @@ Timer timer;
 int firstTime = 0;
 Truck truck;
 
+int maxOK = 30;
 int maxNormal = 40;
 int maxWarning = 70;
 int maxCritical = 100; //Max Drowsiness value
@@ -207,6 +208,7 @@ int vDistraction = 0;
 bool firstDistraction = true;
 double timeDistraction = 0.0;
 int startNoDistraction = 0;
+bool actionRecgnitionTrigger = false;
 
 // Yawn/Blink Variables
 int vYawn = 0;
@@ -420,8 +422,15 @@ void alarmDistraction(cv::Mat prev_frame, int is_dist, int y_alarm, int x_truck_
 	cv::rectangle(prev_frame, cv::Rect(x_vum_dist, y_vum_dist + y_vum - (y_vum_unit * maxCritical), x_vum, y_vum_unit * (maxCritical - maxWarning)), cv::Scalar(0, 0, 50), -1);
 
 	// VU Meter Logic
-	if (tDistraction > maxNormal && pid_da != 0)
+	if (tDistraction > maxNormal && pid_da != 0 && actionRecgnitionTrigger == false){
 		kill(pid_da, SIGUSR1);
+		actionRecgnitionTrigger = true;
+	}
+	if (tDistraction < maxOK && actionRecgnitionTrigger == true)
+	{
+		actionRecgnitionTrigger = false;
+		kill(pid_da, SIGUSR2);
+	}
 	if (tDistraction <= maxNormal)
 	{
 		cv::rectangle(prev_frame, cv::Rect(x_vum_dist, y_vum_dist + y_vum - y_vum_unit * tDistraction, x_vum, y_vum_unit * tDistraction), cv::Scalar(0, 255, 0), -1);
@@ -648,6 +657,8 @@ int main(int argc, char *argv[])
 			if (deviceName.find("CPU") != std::string::npos)
 			{
 				ie.SetConfig({{PluginConfigParams::KEY_DYN_BATCH_ENABLED, PluginConfigParams::YES}}, "CPU");
+				ie.SetConfig({{PluginConfigParams::KEY_CPU_THREADS_NUM, std::to_string(8)}}, "CPU");
+				ie.SetConfig({{PluginConfigParams::KEY_CPU_THROUGHPUT_STREAMS, std::to_string(8) }}, deviceName);
 			}
 			else if (deviceName.find("GPU") != std::string::npos)
 			{

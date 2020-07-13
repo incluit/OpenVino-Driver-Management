@@ -161,7 +161,7 @@ def run_driver_management():
             command_driver_behaviour += " -i '" + \
                 file_input + json['file'] + "'"
         else:
-            command_driver_behaviour += " -i cam"
+            command_driver_behaviour += " -i /dev/video0"
         
         if (json['rosbag'] == "1"):
             command_driver_behaviour += " -ros_sim"
