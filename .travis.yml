@@ -12,6 +12,7 @@ jobs:
     - stage: Docker
       script: docker build -t driver-management .
     - stage: Validate
-      script: docker ps
-              docker images
-              docker system prune -a -f
+      script:
+           - docker ps
+           - docker images
+           - docker system prune -a -f
