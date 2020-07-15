@@ -23,7 +23,7 @@ endpoint = config['cloud']['endpoint']
 dashboard_url = config['cloud']['dashboard_url']
 
 # Variables Initialization
-dirname = os.path.dirname(__file__)
+dirname = os.path.dirname(os.path.abspath(__file__))
 file_input = os.path.join(dirname, 'tmp', '')
 if not os.path.exists(file_input):
     os.makedirs(file_input)
