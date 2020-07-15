@@ -424,4 +424,4 @@ def change_config():
     return jsonify(out=out)
 
 
-app.run(debug=True)  # Run Flask App
+app.run()  # Run Flask App
