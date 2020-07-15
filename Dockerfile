@@ -1,4 +1,4 @@
-FROM openvino/ubuntu18_dev:2020.3
+FROM openvino/ubuntu18_runtime:2020.3
 
 ADD . /app
 WORKDIR /app
@@ -65,6 +65,12 @@ RUN apt-get install -y --no-install-recommends \
 
 # ETS-ROS2
 RUN git clone https://github.com/HernanG234/ets_ros2/
+
+WORKDIR /opt/intel/openvino//deployment_tools
+RUN git clone https://github.com/opencv/open_model_zoo.git
+WORKDIR /opt/intel/openvino//deployment_tools/open_model_zoo/tools/downloader
+RUN /bin/bash -c 'python3 -mpip install --user -r ./requirements.in'
+
 
 WORKDIR /app/DriverBehavior/ets_ros2
 RUN /bin/bash -c 'source /opt/intel/openvino/bin/setupvars.sh && source /opt/ros/crystal/setup.bash && colcon build --symlink-instal --parallel-workers 1 --cmake-args -DSIMULATOR=ON -DBUILD_DEPS=ON'

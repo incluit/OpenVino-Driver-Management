@@ -19,8 +19,8 @@
 #include <inference_engine.hpp>
 #include <ngraph/ngraph.hpp>
 
-#include <samples/ocv_common.hpp>
-#include <samples/slog.hpp>
+#include <ocv_common.hpp>
+#include <slog.hpp>
 
 #include <ie_iextension.h>
 

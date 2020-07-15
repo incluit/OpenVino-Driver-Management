@@ -23,18 +23,20 @@ from .models import AsyncWrapper, preprocess_frame
 from .pipeline import AsyncPipeline, PipelineStep
 from .queue import Signal
 
+pipeline = AsyncPipeline()
 
 def run_pipeline(video, encoder, decoder, render_fn, fps=30):
-    pipeline = AsyncPipeline()
     pipeline.add_step("Data", DataStep(video), parallel=False)
     pipeline.add_step("Encoder", EncoderStep(encoder), parallel=False)
     pipeline.add_step("Decoder", DecoderStep(decoder), parallel=False)
     pipeline.add_step("Render", RenderStep(render_fn, fps=fps), parallel=True)
 
     pipeline.run()
-    pipeline.close()
     ##pipeline.print_statistics()
 
+def stop_pipeline():
+    pipeline.close()
+    cv2.destroyAllWindows()
 
 class DataStep(PipelineStep):
 
