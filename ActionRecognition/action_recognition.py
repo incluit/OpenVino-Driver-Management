@@ -38,8 +38,9 @@ from os import path
 state = {"signal": False, "ready": True }
 AllowedActions = ['both', 'publish', 'subscribe']
 
-def video_demo(encoder, decoder, videos, result_presenter, fps=30):
+def video_demo(encoder, decoder, videos, fps=30, labels=None, no_show=False, publicAWS=None):
     """Continuously run demo on provided video list"""
+    result_presenter = ResultRenderer(labels=labels, no_show = no_show, publicAWS = publicAWS)
     run_pipeline(videos, encoder, decoder, result_presenter.render_frame, fps=fps)
 
 def build_argparser():
@@ -161,17 +162,15 @@ def main():
                       num_requests=(3 if args.device == 'MYRIAD' else 1))
     decoder = IEModel(decoder_xml, decoder_bin, ie, decoder_target_device, num_requests=2)
     print("Waiting on signal")
-    if args.rootCAPath:
-        result_presenter = ResultRenderer(labels, args.no_show, publicAWS)
-    else:
-        result_presenter = ResultRenderer(labels, args.no_show)
-
     while (True):
         time.sleep(1)
         if (state["signal"]):
             state["signal"] = False
             state["ready"] = False
-            video_demo(encoder, decoder, videos, result_presenter, args.fps)
+            if args.rootCAPath:
+                video_demo(encoder, decoder, videos, args.fps, labels, args.no_show, publicAWS)
+            else:
+                video_demo(encoder, decoder, videos, args.fps, labels, args.no_show)
             state["ready"] = True
 
 if __name__ == '__main__':
