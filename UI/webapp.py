@@ -14,6 +14,12 @@ from glob import glob
 OPENVINO_SOURCE = '/opt/intel/openvino/bin/setupvars.sh'
 ROS_SOURCE = '/opt/ros/crystal/setup.bash'
 
+OPENVINO_SOURCE_CMD = 'source /opt/intel/openvino/bin/setupvars.sh'
+ROS_SOURCE_CMD = 'source /opt/ros/crystal/setup.bash'
+ROS_INSTALL_SOURCE_CMD = 'source /app/DriverBehavior/ets_ros2/install/setup.bash'
+PROJECT_SETUP_ENV_CMD = 'source /app/DrrierBehavior/scripts/setupenv.sh'
+CD_DRIVBEH_CMD = 'cd DriverBehavior/'
+
 # Variables from file
 config = configparser.RawConfigParser()
 config.read('config.ini')  # Take The parameters from config.ini file
@@ -39,7 +45,7 @@ actionrecognition_folder = workspace + "ActionRecognition/"
 def shell_communication(cmd):
     # This function allows to execute a bash command
     session = subprocess.Popen(
-        [cmd], stdout=PIPE, stderr=PIPE, shell=True, executable="/bin/bash")
+        [cmd], stdout=PIPE, stderr=PIPE, shell=False, executable="/bin/bash")
     stdout, stderr = session.communicate()
     if stderr:
         raise Exception("Error "+str(stderr))
@@ -72,7 +78,7 @@ app = Flask(__name__)  # Flask constructor
 
 # Check if there are MDX (MyriadX) or NCS (Neural Compute Stick).
 try:
-    subprocess.check_output('dmesg | grep Myriad', shell=True)
+    subprocess.check_output('dmesg | grep Myriad', shell=False)
     myriad = True
 except:
     myriad = False
@@ -222,7 +228,9 @@ def killProcess(processes):
     if (type(processes) == list):
         print(" --- Killing Processes --- ")
         for process in processes:
-            os.system('pkill -f ' + process)
+            command = 'pkill -f ' + process
+            Popen(command, stdout=None, stderr=None,
+                   shell=True, executable="/bin/bash")
             print('Procces killed: ' + process)
         print("--- Finish Killing Processes --- ")
         return "The processes were killed correctly!"
@@ -396,8 +404,8 @@ def check_pass():
     if request.method == 'POST':
         out = False
         json = request.get_json()
-        password = hashlib.md5(json['password'].encode())
-        if (password.hexdigest() == "9093363f8ee6138f7ba43606fdab7176"):
+        password = hashlib.sha256(json['password'].encode())
+        if (password.hexdigest() == "41256cd04cb9bc083075229aa4a103caebe0c52197b94ac87f4b22c0c9bac70b"):
             out = True
     return jsonify(out=out)
 

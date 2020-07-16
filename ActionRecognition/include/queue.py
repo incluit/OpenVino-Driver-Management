@@ -90,7 +90,8 @@ class StubQueue(BaseQueue):
     def put(self, item, *args):
         if item is Signal.STOP_IMMEDIATELY:
             self.close()
-        assert self.item is Signal.EMPTY
+        if not(self.item is Signal.EMPTY):
+            raise ValueError("Item is Empty")
         self.item = item
 
     def get(self):
@@ -98,7 +99,8 @@ class StubQueue(BaseQueue):
             return Signal.STOP_IMMEDIATELY
         item = self.item
         self.item = Signal.EMPTY
-        assert item is not Signal.EMPTY
+        if not(item is not Signal.EMPTY):
+            raise ValueError("Item is not Empty")
         return item
 
 
