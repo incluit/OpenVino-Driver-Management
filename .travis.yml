@@ -19,7 +19,9 @@ jobs:
            - docker ps
            - docker images
            - docker system prune -a -f
+           - echo $TRAVIS_BUILD_NUMBER ' This is the build number'
 
     - stage: Validation
       script:
-           - echo 'The Pipeline was validated!!!!'
+           - docker images
+           - echo $TRAVIS_BUILD_NUMBER ' This is the build number'
