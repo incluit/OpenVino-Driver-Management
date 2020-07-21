@@ -7,11 +7,10 @@ services:
 
 jobs:
   include:
-    - stage: Install
-      script: sudo apt-get update
 
     - stage: Docker
       script:
+           - sudo apt-get update
            - docker build -t driver-management .
            - docker run --name dmcont -t -d --volume="$HOME/.Xauthority:/root/.Xauthority:rw" driver-management
            - docker exec dmcont bash -c 'source ${INTEL_OPENVINO_DIR}/bin/setupvars.sh && cd /app/DriverBehavior/build && curl -s -L https://sonarcloud.io/static/cpp/build-wrapper-linux-x86.zip -o buildwrapper.zip && unzip -qq buildwrapper.zip && export PATH=$PATH:build-wrapper-linux-x86/ && build-wrapper-linux-x86-64 --out-dir bw-output make clean all'
