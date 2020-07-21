@@ -24,7 +24,6 @@ jobs:
 
     - stage: Validation
       script:
-           - docker images
            - echo $TRAVIS_JOB_ID ' this is the job id'
            - echo $TRAVIS_JOB_NUMBER ' This is the job number'
            - echo $TRAVIS_BUILD_NUMBER ' This is the build number'
