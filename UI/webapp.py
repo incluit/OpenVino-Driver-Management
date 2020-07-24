@@ -1,6 +1,5 @@
 import subprocess
 import configparser
-from subprocess import Popen, PIPE
 from flask import Flask, render_template, redirect, url_for, request, jsonify, Response, send_file
 import os
 import shutil
@@ -34,38 +33,26 @@ file_input = os.path.join(dirname, 'tmp', '')
 if not os.path.exists(file_input):
     os.makedirs(file_input)
 
-aws_folder = workspace + "AWS/"
+aws_folder = "/app/AWS/"
 if not os.path.exists(aws_folder):
     os.makedirs(aws_folder)
 
-driverbehavior_folder = workspace + "DriverBehavior/"
-actionrecognition_folder = workspace + "ActionRecognition/"
-
-
-def shell_communication(cmd):
-    # This function allows to execute a bash command
-    session = subprocess.Popen(
-        [cmd], stdout=PIPE, stderr=PIPE, shell=False, executable="/bin/bash")
-    stdout, stderr = session.communicate()
-    if stderr:
-        raise Exception("Error "+str(stderr))
-    return stdout.decode('utf-8')
-
+driverbehavior_folder = "/app/DriverBehavior/"
 
 def shell_communication_parallel(cmds):
     # --- Running in Parallel ---
     # Rosbag
     print(" --- Initializing Driver Management --- ")
     print("Loading Rosbag")
-    rosbag = Popen(cmds[0], stdout=None, stderr=None,
+    rosbag = subprocess.Popen(cmds[0], stdout=None, stderr=None,
                    shell=True, executable="/bin/bash")
     # Driver Actions
     print("Loading Driver Actions")
-    driver_actions = Popen(cmds[1], stdout=None, stderr=None,
+    driver_actions = subprocess.Popen(cmds[1], stdout=None, stderr=None,
                            shell=True, executable="/bin/bash")
     # Driver Behaviour
     print("Loading Driver Behaviour")
-    driver_behaviour = Popen(cmds[2] + str(driver_actions.pid), stdout=None, stderr=None,
+    driver_behaviour = subprocess.Popen(cmds[2] + str(driver_actions.pid), stdout=None, stderr=None,
                              shell=True, executable="/bin/bash")
 
     print(" --- Ready! ---")
@@ -78,7 +65,7 @@ app = Flask(__name__)  # Flask constructor
 
 # Check if there are MDX (MyriadX) or NCS (Neural Compute Stick).
 try:
-    subprocess.check_output('dmesg | grep Myriad', shell=False)
+    subprocess.check_output('/usr/bin/dmesg | grep Myriad', shell=False)
     myriad = True
 except:
     myriad = False
@@ -135,7 +122,7 @@ def run_driver_management():
 
         # Driver Actions Command
         command_driver_actions = "source " + ROS_SOURCE + " && source " + OPENVINO_SOURCE + \
-            " && cd " + actionrecognition_folder + \
+            " && cd /app/ActionRecognition/" \
             " && python3 action_recognition.py -m_en models/FP32/driver-action-recognition-adas-0002-encoder.xml -m_de models/FP32/driver-action-recognition-adas-0002-decoder.xml -lb driver_actions.txt -d " + \
             json['target_actions']
 
@@ -224,30 +211,29 @@ def run_driver_management():
         return ("Finish Driver Management")
 
 
-def killProcess(processes):
-    if (type(processes) == list):
+def killProcess():
+    try:
         print(" --- Killing Processes --- ")
-        for process in processes:
-            command = 'pkill -f ' + process
-            Popen(command, stdout=None, stderr=None,
-                   shell=True, executable="/bin/bash")
-            print('Procces killed: ' + process)
+        subprocess.Popen('/usr/bin/pkill -f truck.bag', stdout=None, stderr=None,
+                           shell=True, executable="/bin/bash")
+        print('Procces killed: truck.bag')
+        subprocess.Popen('/usr/bin/pkill -f action_recognition.py', stdout=None, stderr=None,
+                           shell=True, executable="/bin/bash")
+        print('Procces killed: action_recognition.py')
+        subprocess.Popen('/usr/bin/pkill -f driver_behavior', stdout=None, stderr=None,
+                           shell=True, executable="/bin/bash")
+        print('Procces killed: driver_behavior')
         print("--- Finish Killing Processes --- ")
         return "The processes were killed correctly!"
-    else:
+    except:
         return "Error trying kill the processes"
+
 
 
 @app.route('/stop_driver_management', methods=['POST', 'GET'])
 # This function stop the bash command when the user runs Driver Behaviour Project in the interface.
 def stop_driver_management():
-    processes = [
-        # If select "ros" mat be close the proccess of this program too (Because probably is inside the folder "ros2_ws")
-        'truck.bag',
-        'action_recognition.py',
-        'driver_behavior'
-    ]
-    out = killProcess(processes)
+    out = killProcess()
     return jsonify(out=out)
 
 
@@ -271,8 +257,9 @@ def create_driver_management():
                                    request.values['driver'] + "." + file.filename.split('.')[-1]))
             # Generating the list with all the drivers
             print("Creating New Driver")
-            shell_communication("cd " + driverbehavior_folder +
-                                "scripts/ && python3 create_list.py ../drivers/")
+            session = subprocess.Popen("python3 /app/DriverBehavior/scripts/create_list.py ../drivers/", 
+                                        stdout=subprocess.PIPE, stderr=subprocess.PIPE, shell=True, executable="/bin/bash")
+            session.communicate()
             out = "New driver created!"
         return jsonify(out=out)
 
