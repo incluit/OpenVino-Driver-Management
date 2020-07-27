@@ -23,7 +23,6 @@ CD_DRIVBEH_CMD = 'cd DriverBehavior/'
 config = configparser.RawConfigParser()
 config.read('config.ini')  # Take The parameters from config.ini file
 # Reading values from config.ini
-workspace = os.path.join(config['workspace']['path'], '')
 endpoint = config['cloud']['endpoint']
 dashboard_url = config['cloud']['dashboard_url']
 
@@ -39,21 +38,22 @@ if not os.path.exists(aws_folder):
 
 driverbehavior_folder = "/app/DriverBehavior/"
 
+
 def shell_communication_parallel(cmds):
     # --- Running in Parallel ---
     # Rosbag
     print(" --- Initializing Driver Management --- ")
     print("Loading Rosbag")
     rosbag = subprocess.Popen(cmds[0], stdout=None, stderr=None,
-                   shell=True, executable="/bin/bash")
+                              shell=True, executable="/bin/bash")
     # Driver Actions
     print("Loading Driver Actions")
     driver_actions = subprocess.Popen(cmds[1], stdout=None, stderr=None,
-                           shell=True, executable="/bin/bash")
+                                      shell=True, executable="/bin/bash")
     # Driver Behaviour
     print("Loading Driver Behaviour")
     driver_behaviour = subprocess.Popen(cmds[2] + str(driver_actions.pid), stdout=None, stderr=None,
-                             shell=True, executable="/bin/bash")
+                                        shell=True, executable="/bin/bash")
 
     print(" --- Ready! ---")
     rosbag.wait()
@@ -155,7 +155,7 @@ def run_driver_management():
                 file_input + json['file'] + "'"
         else:
             command_driver_behaviour += " -i /dev/video0"
-        
+
         if (json['rosbag'] == "1"):
             command_driver_behaviour += " -ros_sim"
 
@@ -170,7 +170,7 @@ def run_driver_management():
                     command_driver_behaviour += " -m $face216"
                 else:
                     command_driver_behaviour += " -m $face232"
-        
+
         # Send Data to AWS
         if (json['send_to_aws'] == "1"):
             command_driver_behaviour += " -endpoint " + endpoint + " -rootca " + aws_folder + "root_ca.pem -cert " + \
@@ -215,19 +215,18 @@ def killProcess():
     try:
         print(" --- Killing Processes --- ")
         subprocess.Popen('/usr/bin/pkill -f truck.bag', stdout=None, stderr=None,
-                           shell=True, executable="/bin/bash")
+                         shell=True, executable="/bin/bash")
         print('Procces killed: truck.bag')
         subprocess.Popen('/usr/bin/pkill -f action_recognition.py', stdout=None, stderr=None,
-                           shell=True, executable="/bin/bash")
+                         shell=True, executable="/bin/bash")
         print('Procces killed: action_recognition.py')
         subprocess.Popen('/usr/bin/pkill -f driver_behavior', stdout=None, stderr=None,
-                           shell=True, executable="/bin/bash")
+                         shell=True, executable="/bin/bash")
         print('Procces killed: driver_behavior')
         print("--- Finish Killing Processes --- ")
         return "The processes were killed correctly!"
     except:
         return "Error trying kill the processes"
-
 
 
 @app.route('/stop_driver_management', methods=['POST', 'GET'])
@@ -257,8 +256,8 @@ def create_driver_management():
                                    request.values['driver'] + "." + file.filename.split('.')[-1]))
             # Generating the list with all the drivers
             print("Creating New Driver")
-            session = subprocess.Popen("python3 /app/DriverBehavior/scripts/create_list.py ../drivers/", 
-                                        stdout=subprocess.PIPE, stderr=subprocess.PIPE, shell=True, executable="/bin/bash")
+            session = subprocess.Popen("python3 /app/DriverBehavior/scripts/create_list.py ../drivers/",
+                                       stdout=subprocess.PIPE, stderr=subprocess.PIPE, shell=True, executable="/bin/bash")
             session.communicate()
             out = "New driver created!"
         return jsonify(out=out)
@@ -288,15 +287,6 @@ def drivers():
         'path': os.path.join(drivers_path)
     }
     return render_template("drivers.html", **templateData)
-
-
-@app.route("/configuration")
-def configuration():
-    templateData = {  # Sending the data to the frontend
-        'title': "Configuration",
-        'workspace': workspace
-    }
-    return render_template("configuration.html", **templateData)
 
 
 @app.route("/downloads")
@@ -394,28 +384,6 @@ def check_pass():
         password = hashlib.sha256(json['password'].encode())
         if (password.hexdigest() == "41256cd04cb9bc083075229aa4a103caebe0c52197b94ac87f4b22c0c9bac70b"):
             out = True
-    return jsonify(out=out)
-
-
-@app.route('/change_config', methods=['POST', 'GET'])
-# This functions saves the new configuration in the config.ini file.
-def change_config():
-    if request.method == 'POST':
-        out = False
-        json = request.get_json()
-
-        config['workspace']['path'] = json['workspace']
-
-        # Saving variables in config.ini
-        with open('config.ini', 'w') as configfile:
-            config.write(configfile)
-            out = True
-
-        # Variables are updated with the new values.
-        global workspace
-        # Workspace
-        workspace = os.path.join(config['workspace']['path'], '')
-
     return jsonify(out=out)
 
 

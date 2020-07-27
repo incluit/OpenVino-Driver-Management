@@ -47,7 +47,6 @@
                                             <div class="text-center">
                                                 <img src="static/dist/img/face.png" alt="New Driver Face" width="60%">
                                             </div>
-                                            <div id="div_model"></div>
                                         </div>
                                     </div>
                             </div>
@@ -88,10 +87,10 @@
             context: Form,
             success: function (callback) {
                 console.log(callback);
-                $('#div_model').html(callback.out);
+                toastr.success(callback.out);
             },
             error: function () {
-                $('#div_model').html("Command not found");
+                toastr.error('Command not found');
             }
         });
     });

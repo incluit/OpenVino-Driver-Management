@@ -30,11 +30,11 @@
                                 <div class="row">
                                     <div class="col-md-12">
                                         <label>Endpoint</label>
-                                        <input type="text" name="endpoint" id="endpoint"
-                                            class="form-control" value="{{ endpoint }}" disabled>
+                                        <input type="text" name="endpoint" id="endpoint" class="form-control"
+                                            value="{{ endpoint }}" disabled>
                                         <label>Dashboard URL</label>
-                                        <input type="text" name="dashboard_url" id="dashboard_url"
-                                            class="form-control" value="{{ dashboard_url }}" disabled>
+                                        <input type="text" name="dashboard_url" id="dashboard_url" class="form-control"
+                                            value="{{ dashboard_url }}" disabled>
                                     </div>
                                 </div>
                             </div>
@@ -55,19 +55,22 @@
                                     <div class="col-md-12">
                                         <label>Certificate (*-certificate.pem.crt)</label>
                                         <div class="custom-file">
-                                            <input type="file" name="certificate" class="custom-file-input" id="certificate" accept=".pem.crt" disabled>
+                                            <input type="file" name="certificate" class="custom-file-input"
+                                                id="certificate" accept=".pem.crt" disabled>
                                             <label class="custom-file-label" for="certificate">Choose file</label>
                                         </div>
                                         </br></br>
                                         <label>Private Key (*-private.pem.key)</label>
                                         <div class="custom-file">
-                                            <input type="file" name="private_key" class="custom-file-input" id="private_key" accept=".pem.key" disabled>
+                                            <input type="file" name="private_key" class="custom-file-input"
+                                                id="private_key" accept=".pem.key" disabled>
                                             <label class="custom-file-label" for="private_key">Choose file</label>
                                         </div>
                                         </br></br>
                                         <label>RootCA (AmazonRootCA1.pem)</label>
                                         <div class="custom-file">
-                                            <input type="file" name="root_ca" class="custom-file-input" id="root_ca" accept=".pem" disabled>
+                                            <input type="file" name="root_ca" class="custom-file-input" id="root_ca"
+                                                accept=".pem" disabled>
                                             <label class="custom-file-label" for="root_ca">Choose file</label>
                                         </div>
                                     </div>
@@ -97,7 +100,7 @@
                             </div>
                             <div class="card-footer">
                                 <button type="submit" class="btn btn-success"><i class="nav-icon fas fa-edit"></i>
-                                    Edit</button>&nbsp;&nbsp;&nbsp;<a id="pass_result"></a>
+                                    Edit</button>
                             </div>
                         </form>
                     </div>
@@ -129,7 +132,7 @@
             context: Form,
             success: function (callback) {
                 if (callback.out) {
-                    $('#pass_result').html("Configuration Enabled");
+                    toastr.success('Configuration enabled!');
                     $('#endpoint').prop('disabled', false);
                     $('#dashboard_url').prop('disabled', false);
                     $('#certificate').prop('disabled', false);
@@ -139,7 +142,7 @@
                     $('#save_button').prop('disabled', false);
                 }
                 else {
-                    $('#pass_result').html("Wrong Password");
+                    toastr.error('Wrong password!');
                     $('#endpoint').prop('disabled', true);
                     $('#dashboard_url').prop('disabled', true);
                     $('#certificate').prop('disabled', true);
@@ -226,5 +229,15 @@
             bsCustomFileInput.init();
         });
     })
+
+    $(function () {
+        $('#endpoint').on('keypress', function (e) {
+            if (e.which == 32) {
+                toastr.warning('Spaces are not allowed');
+                return false;
+            }
+        });
+    });
 </script>
+
 {% endblock %}

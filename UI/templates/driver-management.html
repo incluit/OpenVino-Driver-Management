@@ -178,7 +178,8 @@
                                                                         onclick="$(this).next().val(this.checked?1:0)" />
                                                                     <input type="hidden" id="no_show_det_checkbox"
                                                                         name="no_show_det" value="0" />
-                                                                    <label class="custom-control-label" for="no_show_det">
+                                                                    <label class="custom-control-label"
+                                                                        for="no_show_det">
                                                                         Hide detections</label>
                                                                 </div>
                                                                 <div class="custom-control custom-switch">
@@ -234,7 +235,8 @@
                                                         <label>Upload video/image</label><br>
                                                         <div class="custom-file">
                                                             <input type="file" name="file_actions"
-                                                                class="custom-file-input" id="customFile_actions" value="Driver Actions 1.mp4">
+                                                                class="custom-file-input" id="customFile_actions"
+                                                                value="Driver Actions 1.mp4">
                                                             <label class="custom-file-label"
                                                                 for="customFile_actions">Choose
                                                                 file</label>
@@ -314,7 +316,6 @@
                             <button type=sumbit id="buttonTest" class="btn btn-default"><i
                                     class="nav-icon fas fa-stop"></i>
                                 Stop</button>
-                            <span id="stop_result"></span>
                         </div>
                     </div>
                 </div>
@@ -323,9 +324,6 @@
         </div>
     </div>
 </div>
-
-<textarea id="div_model" style="position: absolute; bottom: 0; left: 0; right: 0; 
-         width: 100%; margin: 0; padding-left: 10px; padding-top: 10px; border-width: 0; visibility: hidden;" rows="2"" disabled></textarea>
 
 <script src=" https://code.jquery.com/jquery-1.12.0.min.js"> </script> <script type="text/javascript">
 
@@ -360,11 +358,10 @@
             data: JSON.stringify(data),
             context: Form,
             success: function (callback) {
-                console.log(callback);
-                $('#div_model').html(callback.out);
+                toastr.success(callback.out);
             },
             error: function () {
-                $('#div_model').html("Command not found");
+                toastr.error('Command not found');
             }
         });
     });
@@ -373,7 +370,7 @@
         $('#buttonTest').bind('click', function () {
             $.getJSON('/stop_driver_management',
                 function (callback) {
-                    $('#stop_result').html("<small> &nbsp;" + callback.out + "</small>");
+                    toastr.info(callback.out);
                 });
             return false;
         });

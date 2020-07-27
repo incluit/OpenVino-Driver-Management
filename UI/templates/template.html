@@ -20,7 +20,8 @@
     href="{{ url_for('static', filename='plugins/overlayScrollbars/css/OverlayScrollbars.min.css') }}">
   <!-- Ion Slider -->
   <link rel="stylesheet" href="{{ url_for('static', filename='plugins/ion-rangeslider/css/ion.rangeSlider.min.css') }}">
-
+  <!-- Toastr Dialog -->
+  <link href="{{ url_for('static', filename='dist/css/toastr.css') }}" rel="stylesheet" type="text/css">
 </head>
 
 <body class="hold-transition sidebar-mini layout-fixed">
@@ -41,10 +42,10 @@
     <!-- Main Sidebar Container -->
     <aside class="main-sidebar sidebar-dark-primary elevation-4"">
       <!-- Brand Logo -->
-      <a href="/" class="brand-link" style="background: #725cbb;">
-        <img src="static/dist/img/logo.png" alt="AdminLTE Logo" class="brand-image img-circle elevation-3"
-          style="opacity: .8">
-        <span class="brand-text font-weight">Driver Management</span>
+      <a href=" /" class="brand-link" style="background: #725cbb;">
+      <img src="static/dist/img/logo.png" alt="AdminLTE Logo" class="brand-image img-circle elevation-3"
+        style="opacity: .8">
+      <span class="brand-text font-weight">Driver Management</span>
       </a>
 
       <!-- Sidebar Menu -->
@@ -75,7 +76,7 @@
                 </a>
               </li> 
                -->
-               <li class="nav-item">
+              <li class="nav-item">
                 <a href="{{ url_for('newdriver_management') }}"
                   class="nav-link {% if request.path == '/new-driver-management' %}active{% endif %}">
                   <i class="nav-icon far fa-circle text-success"></i>
@@ -88,15 +89,6 @@
                   <i class="nav-icon far fa-circle text-success"></i>
                   <p>
                     Downloads
-                  </p>
-                </a>
-              </li>
-              <li class="nav-item">
-                <a href="{{ url_for('configuration') }}"
-                  class="nav-link {% if request.path == '/configuration' %}active{% endif %}">
-                  <i class="nav-icon far fa-circle text-success"></i>
-                  <p>
-                    Configuration
                   </p>
                 </a>
               </li>
@@ -175,6 +167,8 @@
   <script src="static/plugins/bs-custom-file-input/bs-custom-file-input.min.js"></script>
   <!-- Ion Slider -->
   <script src="static/plugins/ion-rangeslider/js/ion.rangeSlider.min.js"></script>
+  <!-- Toastr Dialog -->
+  <script src="static/dist/js/toastr.min.js"></script>
 
   <style>
     .nav-sidebar .nav-treeview>.nav-item>.nav-link>.nav-icon {
@@ -227,26 +221,31 @@
       background: #725cbb;
       border-radius: 0;
     }
+
     .nav-sidebar.nav-child-indent .nav-treeview {
-        padding-left: 0;
+      padding-left: 0;
     }
-    .mt-2, .my-2 {
-        margin-top: 0 !important;
+
+    .mt-2,
+    .my-2 {
+      margin-top: 0 !important;
     }
-    [class*=sidebar-dark-] .nav-sidebar>.nav-item.menu-open>.nav-link, [class*=sidebar-dark-] .nav-sidebar>.nav-item:hover>.nav-link, [class*=sidebar-dark-] .nav-sidebar>.nav-item>.nav-link:focus {
+
+    [class*=sidebar-dark-] .nav-sidebar>.nav-item.menu-open>.nav-link,
+    [class*=sidebar-dark-] .nav-sidebar>.nav-item:hover>.nav-link,
+    [class*=sidebar-dark-] .nav-sidebar>.nav-item>.nav-link:focus {
       padding-top: 10px;
       padding-bottom: 10px;
       margin-bottom: 0 !important;
       color: #725cbb !important;
       background-color: #bfbfbf59;
     }
-    
-    .nav-sidebar .nav-link>p>.right {
-        position: absolute;
-        right: 1rem;
-        top: 0.9rem;
-    }
 
+    .nav-sidebar .nav-link>p>.right {
+      position: absolute;
+      right: 1rem;
+      top: 0.9rem;
+    }
   </style>
 
 </body>
