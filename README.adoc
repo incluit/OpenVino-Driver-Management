@@ -98,6 +98,8 @@ make run
 
 Add the certificates of AWS in the UI
 
+After adding the certificates go to "Dashboard" tab and click on "log in".
+
 == Docker Options
 
 * Stop the docker container
