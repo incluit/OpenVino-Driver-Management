@@ -5,6 +5,7 @@ import os
 import shutil
 import hashlib
 import time
+import re
 from glob import glob
 
 # ----- CONFIGURATION -----
@@ -59,6 +60,12 @@ def shell_communication_parallel(cmds):
     rosbag.wait()
     driver_actions.wait()
     driver_behaviour.wait()
+
+def checkAWS(send_to_aws, endpoint):
+    if (send_to_aws=="1" and (endpoint.isspace() or not(re.match('^[a-zA-Z0-9.-]*$', endpoint)) )):
+        return False
+    else:
+        return True
 
 
 app = Flask(__name__)  # Flask constructor
@@ -206,9 +213,13 @@ def run_driver_management():
             wait_for_file(file_input + json['file'])
         if (json['camera_actions'] == "0"):
             wait_for_file(file_input + json['file_actions'])
-        print("Running Driver Management")
-        shell_communication_parallel(cmds=commands)
-        return ("Finish Driver Management")
+        if (checkAWS(json['send_to_aws'], endpoint)):
+            print("Running Driver Management")
+            shell_communication_parallel(cmds=commands)
+            return ("Running Driver Management")
+        else:
+            print("Please check AWS endpoint, only correct endpoints allowed")
+            return ("Please check AWS endpoint, only correct endpoints allowed")
 
 
 def killProcess():

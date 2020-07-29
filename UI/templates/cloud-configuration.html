@@ -236,6 +236,10 @@
                 toastr.warning('Spaces are not allowed');
                 return false;
             }
+            if ( !/[0-9a-zA-Z--.]/.test(String.fromCharCode(e.which))) {
+                toastr.warning("Only alphanumeric, '.' and '-' characters are allowed");
+                return false;
+            }
         });
     });
 </script>
