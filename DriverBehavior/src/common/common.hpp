@@ -132,7 +132,7 @@ static std::vector<std::pair<std::string, InferenceEngine::InferenceEngineProfil
 perfCountersSorted(std::map<std::string, InferenceEngine::InferenceEngineProfileInfo> perfMap) {
     using perfItem = std::pair<std::string, InferenceEngine::InferenceEngineProfileInfo>;
     std::vector<perfItem> sorted;
-    for (auto &kvp : perfMap) sorted.push_back(kvp);
+    for (const auto &kvp : perfMap) sorted.push_back(kvp);
 
     std::stable_sort(sorted.begin(), sorted.end(),
                      [](const perfItem& l, const perfItem& r) {
@@ -194,7 +194,7 @@ static UNUSED void printPerformanceCounts(InferenceEngine::InferRequest request,
     printPerformanceCounts(performanceMap, stream, deviceName, bshowHeader);
 }
 
-inline std::map<std::string, std::string> getMapFullDevicesNames(InferenceEngine::Core& ie, std::vector<std::string> devices) {
+inline std::map<std::string, std::string> getMapFullDevicesNames(const InferenceEngine::Core& ie, std::vector<std::string> devices) {
     std::map<std::string, std::string> devicesMap;
     InferenceEngine::Parameter p;
     for (std::string& deviceName : devices) {
@@ -215,13 +215,13 @@ inline std::string getFullDeviceName(std::map<std::string, std::string>& devices
     }
 }
 
-inline std::string getFullDeviceName(InferenceEngine::Core& ie, std::string device) {
+inline std::string getFullDeviceName(const InferenceEngine::Core& ie, std::string device) {
     InferenceEngine::Parameter p;
     try {
         p = ie.GetMetric(device, METRIC_KEY(FULL_DEVICE_NAME));
         return  p.as<std::string>();
     }
-    catch (InferenceEngine::details::InferenceEngineException &) {
+    catch (const InferenceEngine::details::InferenceEngineException &) {
         return "";
     }
 }
