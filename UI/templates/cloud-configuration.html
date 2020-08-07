@@ -31,15 +31,15 @@
                                     <div class="col-md-12">
                                         <label>Endpoint</label>
                                         <input type="text" name="endpoint" id="endpoint" class="form-control"
-                                            value="{{ endpoint }}" disabled>
+                                            value="{{ endpoint }}">
                                         <label>Dashboard URL</label>
                                         <input type="text" name="dashboard_url" id="dashboard_url" class="form-control"
-                                            value="{{ dashboard_url }}" disabled>
+                                            value="{{ dashboard_url }}">
                                     </div>
                                 </div>
                             </div>
                             <div class="card-footer">
-                                <button type="submit" class="btn btn-success" id="save_config_button" disabled><i
+                                <button type="submit" class="btn btn-success" id="save_config_button"><i
                                         class="nav-icon fas fa-save"></i>
                                     Save Configuration</button>&nbsp;&nbsp;&nbsp;<a id="change_config_result"></a>
                             </div>
@@ -56,51 +56,30 @@
                                         <label>Certificate (*-certificate.pem.crt)</label>
                                         <div class="custom-file">
                                             <input type="file" name="certificate" class="custom-file-input"
-                                                id="certificate" accept=".pem.crt" disabled>
+                                                id="certificate" accept=".pem.crt">
                                             <label class="custom-file-label" for="certificate">Choose file</label>
                                         </div>
                                         </br></br>
                                         <label>Private Key (*-private.pem.key)</label>
                                         <div class="custom-file">
                                             <input type="file" name="private_key" class="custom-file-input"
-                                                id="private_key" accept=".pem.key" disabled>
+                                                id="private_key" accept=".pem.key">
                                             <label class="custom-file-label" for="private_key">Choose file</label>
                                         </div>
                                         </br></br>
                                         <label>RootCA (AmazonRootCA1.pem)</label>
                                         <div class="custom-file">
                                             <input type="file" name="root_ca" class="custom-file-input" id="root_ca"
-                                                accept=".pem" disabled>
+                                                accept=".pem">
                                             <label class="custom-file-label" for="root_ca">Choose file</label>
                                         </div>
                                     </div>
                                 </div>
                             </div>
                             <div class="card-footer">
-                                <button type="submit" class="btn btn-success" id="save_button" disabled><i
+                                <button type="submit" class="btn btn-success" id="save_button"><i
                                         class="nav-icon fas fa-save"></i>
                                     Upload Certificates</button>&nbsp;&nbsp;&nbsp;<a id="change_result"></a>
-                            </div>
-                        </form>
-                    </div>
-                </div>
-                <div class="col-lg-6">
-                    <div class="card card-primary">
-                        <div class="card-header">
-                            <h3 class="card-title">Enable Edition</h3>
-                        </div>
-                        <form id="enable_form">
-                            <div class="card-body">
-                                <div class="row">
-                                    <div class="col-md-12">
-                                        <label>Password</label>
-                                        <input type="password" name="password" class="form-control">
-                                    </div>
-                                </div>
-                            </div>
-                            <div class="card-footer">
-                                <button type="submit" class="btn btn-success"><i class="nav-icon fas fa-edit"></i>
-                                    Edit</button>
                             </div>
                         </form>
                     </div>
@@ -113,47 +92,6 @@
 <script src=" https://code.jquery.com/jquery-1.12.0.min.js"> </script>
 
 <script type="text/javascript">
-    $('#enable_form').submit(function (e) {
-        e.preventDefault();
-        var data = {};
-        var Form = this;
-        var output = "";
-        $.each(this.elements, function (i, v) {
-            var input = $(v);
-            data[input.attr("name")] = input.val();
-            delete data["undefined"];
-        });
-        $.ajax({
-            type: 'POST',
-            url: '/check_pass',
-            dataType: 'json',
-            contentType: 'application/json; charset=utf-8',
-            data: JSON.stringify(data),
-            context: Form,
-            success: function (callback) {
-                if (callback.out) {
-                    toastr.success('Configuration enabled!');
-                    $('#endpoint').prop('disabled', false);
-                    $('#dashboard_url').prop('disabled', false);
-                    $('#certificate').prop('disabled', false);
-                    $('#private_key').prop('disabled', false);
-                    $('#root_ca').prop('disabled', false);
-                    $('#save_config_button').prop('disabled', false);
-                    $('#save_button').prop('disabled', false);
-                }
-                else {
-                    toastr.error('Wrong password!');
-                    $('#endpoint').prop('disabled', true);
-                    $('#dashboard_url').prop('disabled', true);
-                    $('#certificate').prop('disabled', true);
-                    $('#private_key').prop('disabled', true);
-                    $('#root_ca').prop('disabled', true);
-                    $('#save_config_button').prop('disabled', true);
-                    $('#save_button').prop('disabled', true);
-                }
-            }
-        });
-    });
 
     $('#config_form').submit(function (e) {
         e.preventDefault();
@@ -175,9 +113,6 @@
             success: function (callback) {
                 if (callback.out) {
                     $('#change_config_result').html("Changes done!");
-                    $('#endpoint').prop('disabled', true);
-                    $('#dashboard_url').prop('disabled', true);
-                    $('#save_config_button').prop('disabled', true);
                 }
                 else {
                     $('#change_config_result').html("Error");
@@ -212,10 +147,6 @@
             success: function (callback) {
                 if (callback.out) {
                     $('#change_result').html("Certificates uploaded!");
-                    $('#certificate').prop('disabled', true);
-                    $('#private_key').prop('disabled', true);
-                    $('#root_ca').prop('disabled', true);
-                    $('#save_button').prop('disabled', true);
                 }
                 else {
                     $('#change_result').html("Upload error");

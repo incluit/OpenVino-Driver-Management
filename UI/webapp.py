@@ -386,16 +386,5 @@ def upload_certificates():
     return jsonify(out=out)
 
 
-@app.route('/check_pass', methods=['POST', 'GET'])
-# This function checks the password to enable the edition of the configuration
-def check_pass():
-    if request.method == 'POST':
-        out = False
-        json = request.get_json()
-        password = hashlib.sha256(json['password'].encode())
-        if (password.hexdigest() == "41256cd04cb9bc083075229aa4a103caebe0c52197b94ac87f4b22c0c9bac70b"):
-            out = True
-    return jsonify(out=out)
-
 
 app.run()  # Run Flask App
