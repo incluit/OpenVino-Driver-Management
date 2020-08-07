@@ -769,20 +769,20 @@ int main(int argc, char *argv[])
 		Aws::Crt::Io::EventLoopGroup eventLoopGroup(1);
 		if (!eventLoopGroup)
 		{
-			fprintf(stderr, "Event Loop Group Creation failed with error %s\n", Aws::Crt::ErrorDebugString(eventLoopGroup.LastError()));
+		    slog::info << "Event Loop Group Creation failed with error %s\n" << Aws::Crt::ErrorDebugString(eventLoopGroup.LastError()) << slog::endl;
 			exit(-1);
 		}
 		Aws::Crt::Io::DefaultHostResolver defaultHostResolver(eventLoopGroup, 1, 5);
 		Aws::Crt::Io::ClientBootstrap bootstrap(eventLoopGroup, defaultHostResolver);
 		if (!bootstrap)
 		{
-			fprintf(stderr, "ClientBootstrap failed with error %s\n", Aws::Crt::ErrorDebugString(bootstrap.LastError()));
+		    slog::info << "ClientBootstrap failed with error %s\n" << Aws::Crt::ErrorDebugString(bootstrap.LastError()) << slog::endl;
 			exit(-1);
 		}
 		Aws::Iot::MqttClient mqttClient(bootstrap);
 		if (!mqttClient)
 		{
-			fprintf(stderr, "MQTT Client Creation failed with error %s\n", Aws::Crt::ErrorDebugString(mqttClient.LastError()));
+		    slog::info << "MQTT Client Creation failed with error %s\n" << Aws::Crt::ErrorDebugString(mqttClient.LastError()) << slog::endl;
 			exit(-1);
 		}
 		if (!FLAGS_rootca.empty())
@@ -802,14 +802,14 @@ int main(int argc, char *argv[])
 
 			if (!clientConfig)
 			{
-				fprintf(stderr, "Client Configuration initialization failed with error %s\n", Aws::Crt::ErrorDebugString(Aws::Crt::LastError()));
+			    slog::info << "Client Configuration initialization failed with error %s\n" << Aws::Crt::ErrorDebugString(Aws::Crt::LastError()) << slog::endl;
 				exit(-1);
 			}
 
 			connection = mqttClient.NewConnection(clientConfig);
 			if (!*connection)
 			{
-				fprintf(stderr, "MQTT Connection Creation failed with error %s\n", Aws::Crt::ErrorDebugString(connection->LastError()));
+			    slog::info << "MQTT Connection Creation failed with error %s\n" << Aws::Crt::ErrorDebugString(connection->LastError()) << slog::endl;
 				exit(-1);
 			}
 			auto onConnectionCompleted = [&](Aws::Crt::Mqtt::MqttConnection &, int errorCode, Aws::Crt::Mqtt::ReturnCode returnCode, bool) {
@@ -887,10 +887,10 @@ int main(int argc, char *argv[])
 				* This will use default ping behavior of 1 hour and 3 second timeouts.
 				* If you want different behavior, those arguments go into slots 3 & 4.
 				*/
-			fprintf(stdout, "Connecting...\n");
+			slog::info << "Connecting...\n" << slog::endl;
 			if (!connection->Connect(clientId.c_str(), false, 20))
 			{
-				fprintf(stderr, "MQTT Connection failed with error %s\n", Aws::Crt::ErrorDebugString(connection->LastError()));
+			    slog::info << "MQTT Connection failed with error %s\n" << Aws::Crt::ErrorDebugString(connection->LastError()) << slog::endl;
 				exit(-1);
 			}
 			conditionVariable.wait(uniqueLock, [&]() { return connectionCompleted; });
