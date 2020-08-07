@@ -124,7 +124,7 @@ def main():
     extension = path.splitext(full_name)[1]
 
     if '.txt' in  extension:
-        with open(args.input) as f:
+        with open(full_name) as f:
             videos = [line.strip() for line in f.read().split('\n')]
     else:
         videos = [args.input]
@@ -132,8 +132,10 @@ def main():
     if not args.input:
         raise ValueError("--input option is expected")
 
+    full_name_labels = path.basename(args.labels)
+
     if args.labels:
-        with open(args.labels) as f:
+        with open(full_name_labels) as f:
             labels = [l.strip() for l in f.read().strip().split('\n')]
     else:
         labels = None
