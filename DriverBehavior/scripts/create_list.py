@@ -21,7 +21,7 @@ import json
 import sys
 
 if len(sys.argv) == 2:
-    dir = sys.argv[1]
+    dir = os.path.basename(sys.argv[1])
 else:
     dir = '.' + os.sep
 
