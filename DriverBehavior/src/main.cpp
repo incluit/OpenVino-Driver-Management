@@ -585,10 +585,9 @@ int main(int argc, char *argv[])
 
 		if (FLAGS_i == "cam")
 		{
-			if (!cap.open(0))
-				throw std::logic_error("Cannot open input file or camera: " + FLAGS_i);
+			FLAGS_i = "/dev/video0";
 		}
-		else if (!cap.open(FLAGS_i))
+		if (!cap.open(FLAGS_i))
 		{
 			throw std::logic_error("Cannot open input file or camera: " + FLAGS_i);
 		}
@@ -1286,7 +1285,12 @@ int main(int argc, char *argv[])
 				// Save the ouput
 				if (FLAGS_o)
 				{
-					video_output.write(prev_frame);
+					try	{
+						video_output.write(prev_frame);
+					}
+					catch (const std::exception &) {
+						slog::err << "Unable to write video output" << slog::endl;
+					}
 				}
 				timer.finish("visualization");
 			}
@@ -1394,7 +1398,7 @@ int main(int argc, char *argv[])
 				topic.c_str(), [&](Aws::Crt::Mqtt::MqttConnection &, uint16_t, int) { conditionVariable.notify_one(); });
 			conditionVariable.wait(uniqueLock);
 		}
-
+		cap.release();
 		processing_finished = true;
 		//beep_thread.join();
 		slog::info << "Number of processed frames: " << framesCounter << slog::endl;
