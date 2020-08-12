@@ -49,7 +49,7 @@ private:
 	double 		longitude;
 public:
 	/* Member Initializer & Constructor*/
-	Truck() : speed(.0), rpm(0), gear(0), engine_running(false), trailer_connected(false), parking_brake(false), air_pressure(.0), wear_engine(.0), wear_transmission(.0), battery_voltage(.0), wear_wheels(.0), cruise_control(.0), fuel(.0), fuel_average_consumption(.0), wear_chassis(.0), latitude(.0),longitude(.0) {
+	Truck() : speed(.0), rpm(0), gear(0), engine_running(false), trailer_connected(false), parking_brake(false), air_pressure(.0), wear_engine(.0), wear_transmission(.0), battery_voltage(.0), wear_wheels(.0), cruise_control(.0), fuel(.0), fuel_average_consumption(.0), wear_chassis(.0), cargo_mass(.0), latitude(.0),longitude(.0) {
 		this->setAcc(.0, .0, .0);
 		this->setPosition(.0, .0, .0, .0, .0, .0);
 	}
