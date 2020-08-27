@@ -29,7 +29,7 @@
 #include "face_reid.hpp"
 #include "tracker.hpp"
 #include "classes.hpp"
-#include "picojson.hpp"
+#include "json/json.h"
 
 #include <ie_iextension.h>
 
@@ -901,8 +901,8 @@ int main(int argc, char *argv[])
 
 		while (true)
 		{
-			picojson::value v;
-			picojson::value v1;
+			Json::Value v;
+			Json::Value v1;
 			framesCounter++;
 			isLastFrame = !frameReadStatus;
 			timer.start("detection");
@@ -1297,8 +1297,8 @@ int main(int argc, char *argv[])
 			if (timer["send2aws"].getSmoothedDuration() > 500.0)
 			{
 				timer.start("send2aws");
-				picojson::value v;
-				picojson::value v1;
+				Json::Value v;
+				Json::Value v1;
 
 				time_t rawtime;
 				struct tm * timeinfo;
@@ -1306,43 +1306,42 @@ int main(int argc, char *argv[])
 				time (&rawtime);
 				timeinfo = localtime(&rawtime);
 
-				v.set<picojson::object>(picojson::object());
-				v1.set<picojson::object>(picojson::object());
-
 				unsigned long milliseconds_time = std::chrono::duration_cast<std::chrono::milliseconds>(std::chrono::system_clock::now().time_since_epoch()).count();
-				v1.get<picojson::object>()["timestamp"] = picojson::value((double)milliseconds_time);
+				v1["timestamp"] = (double)milliseconds_time;
 				strftime(buffer,sizeof(buffer),"%Y-%m-%dT%H:%M:%S",timeinfo);
   				std::string str(buffer);
-				v1.get<picojson::object>()["@timestamp"] = picojson::value(buffer);
-				v1.get<picojson::object>()["name"] = picojson::value(driver_name);
-				v1.get<picojson::object>()["drowsiness"] = picojson::value(tDrowsiness);
-				v1.get<picojson::object>()["distraction"] = picojson::value(tDistraction);
+				v1["@timestamp"] = buffer;
+				v1["name"] = driver_name;
+				v1["drowsiness"] = tDrowsiness;
+				v1["distraction"] = tDistraction;
 				double dangMap = 0; // This variable shows the highest value.
 				if (tDrowsiness >= tDistraction)
 					dangMap = tDrowsiness;
 				else
 					dangMap = tDistraction;
-				v1.get<picojson::object>()["dangMap"] = picojson::value(dangMap);
+				v1["dangMap"] = dangMap;
 
 				// Truck Information
-				v1.get<picojson::object>()["location"] = picojson::value(std::to_string(-31.4070109)+","+std::to_string(-64.1924054)); // Example Position
-				v1.get<picojson::object>()["engine"] = picojson::value(truck.getEngine());
-				v1.get<picojson::object>()["trailer_connected"] = picojson::value(truck.getTrailer());
-				v1.get<picojson::object>()["speed"] = picojson::value(truck.getSpeed());
-				v1.get<picojson::object>()["rpm"] = picojson::value(std::to_string(truck.getRpm()));
-				v1.get<picojson::object>()["gear"] = picojson::value(std::to_string(truck.getGear()));
-				v1.get<picojson::object>()["cruise_control"] = picojson::value(truck.getCruiseControl());
-				v1.get<picojson::object>()["air_pressure"] = picojson::value(truck.getAirPressure());
-				v1.get<picojson::object>()["battery_voltage"] = picojson::value(truck.getBattery());
-				v1.get<picojson::object>()["fuel"] = picojson::value(truck.getFuel());
-				v1.get<picojson::object>()["fuel_average_consumption"] = picojson::value(truck.getFuelAverage());
-				v1.get<picojson::object>()["cargo_mass"] = picojson::value(truck.getCargoMass());
-				v1.get<picojson::object>()["wear_wheels"] = picojson::value(truck.getWearWheels() * 100);
-				v1.get<picojson::object>()["wear_chassis"] = picojson::value(truck.getWearChassis() * 100);
-				v1.get<picojson::object>()["wear_engine"] = picojson::value(truck.getWearEngine() * 100);
-				v1.get<picojson::object>()["wear_transmission"] = picojson::value(truck.getWearTransmission() * 100);
+				v1["location"] = std::to_string(-31.4070109)+","+std::to_string(-64.1924054); // Example Position
+				v1["engine"] = truck.getEngine();
+				v1["trailer_connected"] = truck.getTrailer();
+				v1["speed"] = truck.getSpeed();
+				v1["rpm"] = std::to_string(truck.getRpm());
+				v1["gear"] = std::to_string(truck.getGear());
+				v1["cruise_control"] = truck.getCruiseControl();
+				v1["air_pressure"] = truck.getAirPressure();
+				v1["battery_voltage"] = truck.getBattery();
+				v1["fuel"] = truck.getFuel();
+				v1["fuel_average_consumption"] = truck.getFuelAverage();
+				v1["cargo_mass"] = truck.getCargoMass();
+				v1["wear_wheels"] = truck.getWearWheels() * 100;
+				v1["wear_chassis"] = truck.getWearChassis() * 100;
+				v1["wear_engine"] = truck.getWearEngine() * 100;
+				v1["wear_transmission"] = truck.getWearTransmission() * 100;
+				
+				Json::StreamWriterBuilder builder;
+				std::string input = Json::writeString(builder, v1);
 
-				std::string input = picojson::value(v1).serialize();
 				Aws::Crt::ByteBuf payload = Aws::Crt::ByteBufNewCopy(Aws::Crt::DefaultAllocator(), (const uint8_t *)input.data(), input.length());
 				Aws::Crt::ByteBuf *payloadPtr = &payload;
 

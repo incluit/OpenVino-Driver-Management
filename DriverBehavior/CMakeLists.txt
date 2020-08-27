@@ -54,6 +54,7 @@ if( BUILD_SAMPLE_NAME AND NOT ${BUILD_SAMPLE_NAME} STREQUAL ${TARGET_NAME} )
 endif()
 
 find_package(ngraph)
+find_package(jsoncpp CONFIG REQUIRED)
 
 file (GLOB MAIN_SRC
         ${CMAKE_CURRENT_SOURCE_DIR}/src/*.cpp
@@ -91,7 +92,7 @@ add_definitions(-DSIMULATOR)
 
 set_target_properties(${TARGET_NAME} PROPERTIES "CMAKE_CXX_FLAGS" "${CMAKE_CXX_FLAGS} -fPIE" COMPILE_PDB_NAME ${TARGET_NAME})
 
-target_link_libraries(${TARGET_NAME} ${IE_LIBRARIES} ${InferenceEngine_LIBRARIES} aws-crt-cpp)
+target_link_libraries(${TARGET_NAME} ${IE_LIBRARIES} ${InferenceEngine_LIBRARIES} aws-crt-cpp jsoncpp_lib)
 
 target_link_libraries(${TARGET_NAME} gflags)
 

@@ -41,6 +41,12 @@ RUN git checkout f08b7040
 
 WORKDIR /app/DriverBehavior/third-party
 RUN git clone https://github.com/davisking/dlib.git
+RUN git clone https://github.com/open-source-parsers/jsoncpp.git
+RUN mkdir jsoncpp/build/
+WORKDIR /app/DriverBehavior/third-party/jsoncpp/build
+RUN cmake -DCMAKE_BUILD_TYPE=debug -DJSONCPP_LIB_BUILD_STATIC=ON-DJSONCPP_LIB_BUILD_SHARED=OFF -G "Unix Makefiles" ../
+RUN make
+RUN make install
 
 WORKDIR /app/DriverBehavior
 RUN chmod +x /app/DriverBehavior/scripts/setupenv.sh
