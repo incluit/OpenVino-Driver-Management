@@ -72,7 +72,7 @@ app = Flask(__name__)  # Flask constructor
 
 # Check if there are MDX (MyriadX) or NCS (Neural Compute Stick).
 try:
-    subprocess.check_output('/usr/bin/dmesg | grep Myriad', shell=False)
+    subprocess.check_output('/bin/dmesg | /bin/grep Myriad', shell=True)
     myriad = True
 except:
     myriad = False
