@@ -31,6 +31,7 @@ RUN apt-get install -y --no-install-recommends \
         gnupg2 \
         sudo 
 
+RUN pip3 install wheel
 RUN pip3 install --upgrade pip setuptools wheel Flask==1.0.2 AWSIoTPythonSDK
 
 WORKDIR /app/DriverBehavior
