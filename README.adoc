@@ -88,13 +88,18 @@ make docker-run
 make docker-start
 ----
 
-**2.** Inside the docker run:
+**2.** Run the following script:
+----
+bash /app/DriverBehavior/scripts/dlposemodel.sh
+----
+
+**3.** Inside the docker run:
 [source,bash]
 ----
 make run
 ----
 
-**3.** AWS:
+**4.** AWS:
 
 Add the certificates of AWS in the UI
 
