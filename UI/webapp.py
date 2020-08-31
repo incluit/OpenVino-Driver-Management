@@ -160,6 +160,8 @@ def run_driver_management():
         if (json['camera'] == "0"):
             command_driver_behaviour += " -i '" + \
                 file_input + json['file'] + "'"
+            command_driver_actions += " -i '" + \
+                file_input + json['file'] + "'"
         else:
             command_driver_behaviour += " -i /dev/video0"
 
