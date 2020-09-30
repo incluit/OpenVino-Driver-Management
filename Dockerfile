@@ -37,8 +37,6 @@ RUN pip3 install --upgrade pip setuptools wheel Flask==1.0.2 AWSIoTPythonSDK
 WORKDIR /app/DriverBehavior
 RUN git clone --recursive https://github.com/awslabs/aws-crt-cpp.git
 RUN mkdir build
-WORKDIR /app/DriverBehavior/aws-crt-cpp/aws-common-runtime/s2n
-RUN git checkout f08b7040
 
 WORKDIR /app/DriverBehavior/third-party
 RUN git clone https://github.com/davisking/dlib.git
